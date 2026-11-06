@@ -226,7 +226,7 @@
     var render = function () {
       var q = pin.value.trim().toLowerCase();
       shown = (q ? palItems.filter(function (it) { return it.t.toLowerCase().indexOf(q) >= 0; }) : palItems.slice(0, 14)).slice(0, 9);
-      if (q) shown.push({ t: (B.lang === "om" ? "Gaafadhu: " : B.lang === "am" ? "ጠይቅ፡ " : "Ask Batu: ") + pin.value.trim(), u: "/ask?q=" + encodeURIComponent(pin.value.trim()), k: "AI" });
+      if (q) shown.push({ t: (B.lang === "om" ? "Gaafadhaa: " : B.lang === "am" ? "ጠይቅ፡ " : "Ask Batu: ") + pin.value.trim(), u: "/ask?q=" + encodeURIComponent(pin.value.trim()), k: "AI" });
       sel = Math.min(sel, shown.length - 1);
       plist.innerHTML = "";
       shown.forEach(function (it, i) {
