@@ -1,0 +1,14 @@
+{% extends "studio/base.html" %}
+{% block title %}History{% endblock %}
+{% block main %}
+<div class="head"><div><p class="eyebrow">System · var/history</p><h1>History</h1>
+<p class="muted">Every save keeps the version it replaced (the last 50 per file). Restoring is itself saved, so it can be undone too.</p></div></div>
+<nav class="tabs">{% for f, label in files.items() %}<a href="?file={{ f }}" class="{{ 'on' if f == file }}">{{ label }}</a>{% endfor %}</nav>
+<div class="panel"><table class="t">
+  <thead><tr><th>Saved over</th><th>By</th><th>Change</th><th>Size</th><th></th></tr></thead>
+  <tbody>{% for v in versions %}<tr>
+    <td class="mono small">{{ v.when }}</td><td>{{ v.who }}</td><td>{{ v.note }}</td><td class="mono small">{{ (v.size / 1024)|round(1) }} KB</td>
+    <td><form method="post" action="/admin/history/restore" data-confirm="Put {{ files[file] }} back to how it was before {{ v.when }}?">{{ csrf() }}<input type="hidden" name="file" value="{{ file }}"><input type="hidden" name="version" value="{{ v.id }}"><button class="btn sm ghost">Restore this version</button></form></td>
+  </tr>{% else %}<tr><td colspan="5" class="muted">No earlier versions of this file yet.</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endblock %}

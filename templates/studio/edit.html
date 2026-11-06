@@ -1,0 +1,27 @@
+{% extends "studio/base.html" %}
+{% import "studio/_fields.html" as FX with context %}
+{% block title %}{{ rec.get(c.label) or "New" }} · {{ c.title }}{% endblock %}
+{% block main %}
+{% set media = S.options_for(S.F("x", "x", "select", source="media"), content_mod)|map("first")|list %}
+<div class="head">
+  <div><p class="eyebrow"><a href="/admin/c/{{ c.name }}">{{ c.title }}</a> / {{ "new" if not key else key }}</p>
+  <h1>{{ rec.get(c.label) or "New " ~ c.title|lower }}</h1></div>
+  <div class="head-acts">{% if key and c.public_url and c.id_key %}<a class="btn ghost" href="{{ c.public_url.replace('{id}', key) }}" target="_blank">View on site ↗</a>{% endif %}</div>
+</div>
+{% if errors %}<div class="msg bad" role="alert"><b>Not saved yet:</b><ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>{% endif %}
+{% include "studio/_untranslated.html" %}
+<form method="post" action="/admin/c/{{ c.name }}/save" class="editor" data-guard>
+  {{ csrf() }}<input type="hidden" name="_key" value="{{ key }}">
+  <div class="grid2">{% for f in c.fields %}{{ FX.field(f, rec.get(f.key), "", content_mod, media) }}{% endfor %}</div>
+  <div class="savebar">
+    <button class="btn gold">Save</button>
+    <a class="btn ghost" href="/admin/c/{{ c.name }}">Cancel</a>
+    <span class="muted small">Saving updates this computer's copy. Publish to put it on batu.gov.et.</span>
+  </div>
+</form>
+{% if key %}
+<form method="post" action="/admin/c/{{ c.name }}/{{ key }}/delete" class="danger-zone" data-confirm="Delete “{{ rec.get(c.label) }}”? You can restore it from History.">
+  {{ csrf() }}<button class="btn bad sm">Delete this {{ c.title|lower|trim("s") }}</button>
+</form>
+{% endif %}
+{% endblock %}

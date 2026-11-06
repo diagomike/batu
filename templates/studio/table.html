@@ -1,0 +1,13 @@
+{% extends "studio/base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block main %}
+<div class="head"><div><p class="eyebrow">Residents</p><h1>{{ title }} <span class="ct big">{{ rows|length }}</span></h1>{% if note %}<p class="muted">{{ note }}</p>{% endif %}</div>
+{% if csv %}<a class="btn ghost" href="{{ csv }}">Download CSV</a>{% endif %}</div>
+<div class="panel"><table class="t">
+  <thead><tr>{% for c in cols %}<th>{{ c|replace("_", " ")|capitalize }}</th>{% endfor %}{% if delete %}<th></th>{% endif %}</tr></thead>
+  <tbody>{% for r in rows %}<tr>
+    {% for c in cols %}<td class="{{ 'mono small' if c in ['at', 'created', 'id', 'receipt'] }}">{% if link and c == link[0] %}<a href="{{ link[1].format(r[c]) }}">{{ r[c] }}</a>{% else %}{{ r[c] if r[c] is not none }}{% endif %}</td>{% endfor %}
+    {% if delete %}<td><form method="post" action="{{ delete.format(r.id) }}" data-confirm="Remove this subscriber?">{{ csrf() }}<button class="lnk">remove</button></form></td>{% endif %}
+  </tr>{% else %}<tr><td colspan="{{ cols|length + 1 }}" class="muted">Nothing yet.</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endblock %}

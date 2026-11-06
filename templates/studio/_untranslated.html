@@ -1,0 +1,7 @@
+{% if untranslated and (untranslated.get("om") or untranslated.get("am")) %}
+<div class="msg warn">
+  <b>{{ [untranslated.get("om", [])|length, untranslated.get("am", [])|length]|max }} text(s) on this page are not translated yet</b>
+  (Afaan Oromoo {{ untranslated.get("om", [])|length }}, Amharic {{ untranslated.get("am", [])|length }}). Until they are, residents see the English.
+  <a href="/admin/translations?show=missing">Translate them →</a>
+</div>
+{% endif %}

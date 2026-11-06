@@ -76,18 +76,7 @@ def data_strings():
 
     for p in (ROOT / "data").glob("*.json"):
         walk(json.loads(p.read_text(encoding="utf8")))
-    # news and notices added at runtime
-    dbp = ROOT / "var" / "batu.db"
-    if dbp.exists():
-        import sqlite3
-        con = sqlite3.connect(dbp)
-        for title, summary, body, cat in con.execute("select title, summary, body, category from news"):
-            for s in (title, summary, cat):
-                if s:
-                    out.add(s)
-            for para in (body or "").split("\n\n"):
-                if para.strip():
-                    out.add(para.strip())
+    # news and notices are in data/news.json, which the walk above already covers
     return out
 
 

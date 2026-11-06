@@ -1,0 +1,50 @@
+{% extends "studio/base.html" %}
+{% block title %}Translations{% endblock %}
+{% block main %}
+<div class="head"><div><p class="eyebrow">Library · data/i18n</p><h1>Translations</h1>
+<p class="muted">Every text residents see, in English, Afaan Oromoo and Amharic. Machine translations show a notice on the site until a reviewer ticks them. Reviewers for now: {{ reviewers.om }} (OM), {{ reviewers.am }} (AM).</p></div></div>
+
+<div class="tiles">
+  {% if counts.error %}<div class="tile"><span class="k">Error</span><span class="s">{{ counts.error }}</span></div>{% else %}
+  <div class="tile"><span class="k">Texts</span><b>{{ counts.total }}</b></div>
+  <div class="tile"><span class="k">Afaan Oromoo</span><b>{{ counts.total - counts.om.missing }}</b><span class="s">{{ counts.om.missing }} missing · {{ counts.om.reviewed }} reviewed</span></div>
+  <div class="tile"><span class="k">Amharic</span><b>{{ counts.total - counts.am.missing }}</b><span class="s">{{ counts.am.missing }} missing · {{ counts.am.reviewed }} reviewed</span></div>
+  {% endif %}
+  <div class="tile run" data-trstatus>
+    <span class="k">Machine translation</span>
+    <form method="post" action="/admin/translations/run">{{ csrf() }}<button class="btn gold sm" {% if state.running %}disabled{% endif %}>{{ "Running…" if state.running else "Translate missing texts" }}</button></form>
+    <span class="s">{{ "Google Cloud Translation (API key)" if has_key else "Google Translate, public service (slow, may pause)" }}</span>
+    <pre class="log" {% if not state.log %}hidden{% endif %}>{{ state.log|join("\n") }}</pre>
+  </div>
+</div>
+
+<form class="search" method="get">
+  <input name="q" value="{{ q }}" placeholder="Search in any language…" type="search">
+  <select name="show"><option value="missing" {% if show == 'missing' %}selected{% endif %}>Missing a translation</option><option value="unreviewed" {% if show == 'unreviewed' %}selected{% endif %}>Not reviewed</option><option value="all" {% if show == 'all' %}selected{% endif %}>All texts</option></select>
+  <button class="btn sm">Show</button>
+  <span class="muted small">{{ total }} text(s)</span>
+</form>
+
+<form method="post" action="/admin/translations/save" data-guard>
+  {{ csrf() }}<input type="hidden" name="__n" value="{{ rows|length }}"><input type="hidden" name="_back" value="{{ request.url.path }}?{{ request.url.query }}">
+  <div class="panel">
+  <table class="t trtable">
+    <thead><tr><th>English</th><th>Afaan Oromoo</th><th>Amharic</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+    <tr>
+      <td class="en"><input type="hidden" name="{{ loop.index0 }}.en" value="{{ r.en }}">{{ r.en }}</td>
+      <td><textarea name="{{ loop.index0 }}.om" rows="{{ 2 if r.en|length < 90 else 4 }}" lang="om" class="{{ 'empty' if not r.om }}">{{ r.om }}</textarea>
+        <label class="check small"><input type="checkbox" name="{{ loop.index0 }}.rev_om" {% if r.rev_om %}checked{% endif %}><span>reviewed</span></label></td>
+      <td><textarea name="{{ loop.index0 }}.am" rows="{{ 2 if r.en|length < 90 else 4 }}" lang="am" class="{{ 'empty' if not r.am }}">{{ r.am }}</textarea>
+        <label class="check small"><input type="checkbox" name="{{ loop.index0 }}.rev_am" {% if r.rev_am %}checked{% endif %}><span>reviewed</span></label></td>
+    </tr>
+    {% else %}<tr><td colspan="3" class="muted">Nothing to show. {% if show == "missing" %}Every text is translated.{% endif %}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% if rows %}<div class="savebar"><button class="btn gold">Save this page</button>
+  {% if pages > 1 %}<span class="pager mono small">{% for p in range(1, pages + 1) %}{% if p == page_no %}<b>{{ p }}</b>{% else %}<a href="?q={{ q|urlencode }}&show={{ show }}&page_no={{ p }}">{{ p }}</a>{% endif %} {% endfor %}</span>{% endif %}
+  </div>{% endif %}
+</form>
+{% endblock %}

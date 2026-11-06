@@ -1,0 +1,47 @@
+{% extends "studio/base.html" %}
+{% block title %}Photos{% endblock %}
+{% block main %}
+<div class="head"><div><p class="eyebrow">Library · media.json · static/img</p><h1>Photos <span class="ct big">{{ items|length }}</span></h1>
+<p class="muted">Every photo is stored in two sizes (1600 and 800 px). Credit the photographer and the licence; the About page lists them all.</p></div></div>
+
+<details class="panel upload" {% if not items %}open{% endif %}>
+  <summary class="ph"><span>+ Add a photo</span></summary>
+  <form method="post" action="/admin/media/upload" enctype="multipart/form-data" class="editor">
+    {{ csrf() }}
+    <div class="grid2">
+      <div class="fld wide"><label for="up-photo">Photo (JPG, PNG or WebP, up to 25 MB)</label><input id="up-photo" type="file" name="photo" accept="image/*" required></div>
+      <div class="fld"><label for="up-slug">Short name</label><input id="up-slug" name="slug" placeholder="e.g. jetty-sunset"><p class="help">Lowercase words with dashes. Left empty, the file name is used.</p></div>
+      <div class="fld"><label for="up-kind">Kind</label><select id="up-kind" name="kind"><option>photo</option><option>aerial</option><option>map</option><option>illustration</option></select></div>
+      <div class="fld wide"><label for="up-cap">Caption</label><input id="up-cap" name="caption"></div>
+      <div class="fld"><label for="up-credit">Photographer or owner</label><input id="up-credit" name="credit" placeholder="City of Batu"></div>
+      <div class="fld"><label for="up-lic">Licence</label><input id="up-lic" name="licence" placeholder="e.g. CC BY-SA 4.0, or leave empty for city-owned"></div>
+      <div class="fld"><label for="up-licu">Licence link</label><input id="up-licu" name="licence_url"></div>
+      <div class="fld"><label for="up-src">Where it came from</label><input id="up-src" name="source"></div>
+    </div>
+    <div class="savebar"><button class="btn gold">Upload</button></div>
+  </form>
+</details>
+
+<form class="search" method="get"><input name="q" value="{{ q }}" placeholder="Search photos…" type="search"><button class="btn sm">Search</button></form>
+<div class="mediagrid">
+{% for slug, m in items %}
+  <details class="mcard">
+    <summary>
+      <img src="/static/img/{{ slug }}-800.jpg" alt="" loading="lazy">
+      <span class="mono small">{{ slug }}</span>
+      <span class="small muted">{{ m.credit }}{% if m.licence %} · {{ m.licence }}{% endif %}</span>
+      {% if used.get(slug) %}<span class="tagm">used {{ used[slug]|length }}×</span>{% endif %}
+    </summary>
+    <form method="post" action="/admin/media/{{ slug }}/save" class="editor">
+      {{ csrf() }}
+      {% for k, label in [("caption", "Caption"), ("credit", "Credit"), ("licence", "Licence"), ("licence_url", "Licence link"), ("source", "Source"), ("kind", "Kind")] %}
+      <div class="fld"><label>{{ label }}<input name="{{ k }}" value="{{ m.get(k, '') }}"></label></div>
+      {% endfor %}
+      {% if used.get(slug) %}<p class="help">Used in: {{ used[slug]|join("; ") }}</p>{% endif %}
+      <div class="savebar"><button class="btn sm gold">Save credits</button></div>
+    </form>
+    <form method="post" action="/admin/media/{{ slug }}/delete" data-confirm="Remove the photo '{{ slug }}'?">{{ csrf() }}<button class="btn bad sm" {% if used.get(slug) %}disabled title="In use"{% endif %}>Remove photo</button></form>
+  </details>
+{% endfor %}
+</div>
+{% endblock %}

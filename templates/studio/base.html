@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>{% block title %}Studio{% endblock %} · Batu Studio</title>
+<link rel="stylesheet" href="/static/fonts/fonts.css">
+<link rel="stylesheet" href="/static/css/studio.css">
+<link rel="icon" href="/static/img/mark.svg" type="image/svg+xml">
+</head>
+<body>
+{% if user %}
+<header class="top">
+  <a class="brand" href="/admin"><span class="sq"></span><b>Batu Studio</b><span class="mono">{{ site_name }}</span></a>
+  <label class="menu-btn" for="navtoggle" aria-label="Menu">☰</label>
+  <div class="top-r">
+    <a href="/" target="_blank" class="mono">View site ↗</a>
+    <span class="mono who">{{ user.name }} · {{ user.role }}</span>
+    <form method="post" action="/admin/logout">{{ csrf() }}<button class="lnk mono">Sign out</button></form>
+  </div>
+</header>
+<input type="checkbox" id="navtoggle" hidden>
+<div class="shell">
+  <nav class="side" aria-label="Studio">
+    <div class="sec">Workspace</div>
+    <a href="/admin" class="{{ 'on' if request.url.path in ['/admin', '/admin/'] }}">Overview</a>
+    <a href="/admin/requests" class="{{ 'on' if request.url.path.startswith('/admin/requests') }}">Requests{% if remote %} <span class="tagm">live</span>{% endif %}</a>
+    {% for g in groups %}
+    <div class="sec">{{ g }}</div>
+    {% for kind, name, title, n in nav[g] %}<a href="/admin/{{ kind }}/{{ name }}" class="{{ 'on' if request.url.path.startswith('/admin/' ~ kind ~ '/' ~ name) and (request.url.path == '/admin/' ~ kind ~ '/' ~ name or request.url.path.startswith('/admin/' ~ kind ~ '/' ~ name ~ '/')) }}">{{ title }}{% if n is not none %}<span class="ct">{{ n }}</span>{% endif %}</a>{% endfor %}
+    {% endfor %}
+    <div class="sec">Library</div>
+    <a href="/admin/media" class="{{ 'on' if request.url.path.startswith('/admin/media') }}">Photos</a>
+    <a href="/admin/translations" class="{{ 'on' if request.url.path.startswith('/admin/translations') }}">Translations</a>
+    <div class="sec">Residents</div>
+    <a href="/admin/payments" class="{{ 'on' if request.url.path.startswith('/admin/payments') }}">Payments</a>
+    <a href="/admin/subscribers" class="{{ 'on' if request.url.path.startswith('/admin/subscribers') }}">Subscribers</a>
+    <a href="/admin/asks" class="{{ 'on' if request.url.path.startswith('/admin/asks') }}">Assistant questions</a>
+    <div class="sec">System</div>
+    <a href="/admin/history" class="{{ 'on' if request.url.path.startswith('/admin/history') }}">History</a>
+    {% if user.role == 'admin' %}<a href="/admin/users" class="{{ 'on' if request.url.path.startswith('/admin/users') }}">Users</a>
+    <a href="/admin/settings" class="{{ 'on' if request.url.path.startswith('/admin/settings') }}">AI assistant</a>
+    <a href="/admin/publish" class="pub {{ 'on' if request.url.path.startswith('/admin/publish') }}">Publish ↑</a>{% endif %}
+  </nav>
+  <main class="main">
+    {% if flash %}<div class="msg ok" role="status">{{ flash }}</div>{% endif %}
+    {% if err %}<div class="msg bad" role="alert">{{ err }}</div>{% endif %}
+    {% block main %}{% endblock %}
+  </main>
+</div>
+{% else %}
+<main class="gate">{% if err %}<div class="msg bad" role="alert">{{ err }}</div>{% endif %}{% if flash %}<div class="msg ok">{{ flash }}</div>{% endif %}{% block gate %}{% endblock %}</main>
+{% endif %}
+<script src="/static/js/studio.js" defer></script>
+</body>
+</html>

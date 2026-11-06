@@ -1,0 +1,24 @@
+{% extends "studio/base.html" %}
+{% block title %}Publish{% endblock %}
+{% block main %}
+<div class="head"><div><p class="eyebrow">System · tools/build.py</p><h1>Publish the site</h1>
+<p class="muted">Builds every public page in English, Afaan Oromoo and Amharic, adds the PHP services for forms, payments and tracking, and packs it as <span class="mono">dist/</span> plus a zip. With upload switched on it is sent to the host over FTPS.</p></div></div>
+
+<div class="cols">
+<section class="panel">
+  <div class="ph"><span>Publish now</span></div>
+  <form method="post" action="/admin/publish" class="editor" data-pubform>
+    {{ csrf() }}
+    <label class="check"><input type="checkbox" name="upload" {% if pub.ftp %}checked{% else %}disabled{% endif %}><span>Upload to {{ pub.target or "the host" }} when the build is ready</span></label>
+    {% if not pub.ftp %}<p class="help">Uploading needs FTP_HOST, FTP_USER, FTP_PASSWORD and FTP_DIR in <span class="mono">portal/.env</span> (see DEPLOY.md). Without them the build is saved locally for you to upload in Plesk.</p>{% endif %}
+    {% if not counts.error and (counts.om.missing or counts.am.missing) %}<p class="msg warn">{{ counts.om.missing }} Afaan Oromoo and {{ counts.am.missing }} Amharic texts are not translated; those show in English. <a href="/admin/translations">Translate first →</a></p>{% endif %}
+    <div class="savebar"><button class="btn gold" {% if pub.running %}disabled{% endif %}>{{ "Publishing…" if pub.running else "Build and publish" }}</button></div>
+  </form>
+</section>
+<section class="panel" data-pubstatus>
+  <div class="ph"><span>Progress</span><span class="mono small">{{ "running" if pub.running else ("done" if pub.ok else ("failed" if pub.ok == false else "idle")) }}</span></div>
+  <pre class="log">{{ pub.log|join("\n") or "Nothing running." }}</pre>
+  {% if pub.last.at %}<p class="small muted">Last publish: {{ pub.last.at.replace("T", " ") }} by {{ pub.last.by }}{% if pub.last.pages %}, {{ pub.last.pages }} pages{% endif %}{% if pub.last.zip %}, <span class="mono">{{ pub.last.zip }}</span>{% endif %}{{ ", uploaded" if pub.last.uploaded else ", not uploaded" }}.</p>{% endif %}
+</section>
+</div>
+{% endblock %}

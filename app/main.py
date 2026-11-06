@@ -39,6 +39,8 @@ async def lifespan(app):
     INDEX.gemini = INDEX.gemini.__class__()  # re-read env after .env is loaded
     n = INDEX.build()
     print(f"[rag] indexed {n} documents; gemini={'on' if INDEX.gemini.enabled else 'off'}")
+    from . import settings  # studio key first, then .env key, then quoted answers (app/settings.py)
+    settings.apply_in_background()
     yield
 
 
@@ -385,44 +387,21 @@ def set_lang(code: str, back: str = "/"):
     return resp
 
 
-# ---------- admin ----------
+# ---------- admin: Batu Studio (app/studio.py) ----------
+from . import studio  # noqa: E402
+
+app.include_router(studio.router)
+
+
+@app.exception_handler(studio.NeedLogin)
+async def _studio_login(request: Request, exc):
+    return RedirectResponse("/admin?err=Please+sign+in.", status_code=303)
+
+
 def _check(token: str):
+    """Bearer token for machine pushes (POST /api/admin/news)."""
     if not secrets.compare_digest(token or "", ADMIN_TOKEN):
         raise HTTPException(403, "Wrong admin token")
-
-
-@app.get("/admin", response_class=HTMLResponse)
-def admin(request: Request, token: str = ""):
-    if token != ADMIN_TOKEN:
-        return render(request, "admin_login.html")
-    return render(request, "admin.html", token=token, reqs=db.list_requests(), news=db.list_news("news", 100),
-                  notices=db.list_news("notice", 50), asks=db.recent_asks(30), statuses=db.STATUS_LABELS)
-
-
-@app.post("/admin/news")
-def admin_news(background: BackgroundTasks, token: str = Form(...), kind: str = Form("news"), title: str = Form(...),
-               summary: str = Form(""), body: str = Form(""), category: str = Form("City"), source: str = Form("City of Batu"),
-               url: str = Form(""), date: str = Form("")):
-    _check(token)
-    db.add_news({"title": title, "summary": summary, "body": body or summary, "category": category, "source": source,
-                 "url": url, "date": date or None}, kind=kind, via="admin")
-    background.add_task(INDEX.build)
-    return RedirectResponse(f"/admin?token={token}#news", status_code=303)
-
-
-@app.post("/admin/status")
-def admin_status(token: str = Form(...), ref: str = Form(...), status: str = Form(...), note: str = Form("")):
-    _check(token)
-    db.set_status(ref, status, note)
-    return RedirectResponse(f"/admin?token={token}#requests", status_code=303)
-
-
-@app.post("/admin/news/delete")
-def admin_news_delete(background: BackgroundTasks, token: str = Form(...), id: str = Form(...)):
-    _check(token)
-    db.delete_news(id)
-    background.add_task(INDEX.build)
-    return RedirectResponse(f"/admin?token={token}#news", status_code=303)
 
 
 # ---------- JSON API ----------

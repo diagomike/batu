@@ -1,0 +1,28 @@
+{% extends "studio/base.html" %}
+{% block title %}{{ r.ref }}{% endblock %}
+{% block main %}
+<div class="head"><div><p class="eyebrow"><a href="/admin/requests">Requests</a> / {{ r.kind }}</p><h1 class="mono">{{ r.ref }}</h1><p>{{ r.title }}</p></div>
+<span class="st big st-{{ r.status }}">{{ r.status_label }}</span></div>
+<div class="cols">
+  <section class="panel">
+    <div class="ph"><span>Details from the resident</span></div>
+    <table class="t kv"><tbody>
+      {% for k, v in r.data.items() %}<tr><th>{{ k|replace("_", " ")|capitalize }}</th><td>{% if k == "photo" %}<span class="mono">{{ v }}</span> <span class="muted small">(in var/uploads)</span>{% else %}{{ v }}{% endif %}</td></tr>{% endfor %}
+      {% if r.amount %}<tr><th>Amount</th><td>{{ "{:,.0f}".format(r.amount) }} birr · {{ "paid" if r.paid else "not paid" }}</td></tr>{% endif %}
+      <tr><th>Received</th><td class="mono">{{ r.created.replace("T", " ") }}</td></tr>
+    </tbody></table>
+    <p class="help">Phone numbers are for contacting the resident about this request only.</p>
+  </section>
+  <section class="panel">
+    <div class="ph"><span>Update the status</span></div>
+    <form method="post" action="/admin/requests/{{ r.ref }}/status" class="editor">
+      {{ csrf() }}
+      <div class="fld"><label for="st">New status</label><select id="st" name="status">{% for k, v in statuses.items() %}<option value="{{ k }}" {% if k == r.status %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></div>
+      <div class="fld wide"><label for="nt">Note to the resident (shown on the tracking page)</label><textarea id="nt" name="note" rows="3" placeholder="e.g. A crew is scheduled for Thursday morning."></textarea></div>
+      <div class="savebar"><button class="btn gold">Update</button></div>
+    </form>
+    <div class="ph"><span>Timeline</span></div>
+    <ol class="tl">{% for h in r.history|reverse %}<li><span class="mono small">{{ h.at.replace("T", " ")[:16] }}</span> <b>{{ statuses.get(h.status, h.status) }}</b>{% if h.note %} — {{ h.note }}{% endif %}</li>{% endfor %}</ol>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "studio/base.html" %}
+{% block title %}Users{% endblock %}
+{% block main %}
+<div class="head"><div><p class="eyebrow">System · var/studio_users.json</p><h1>Users</h1>
+<p class="muted">Editors change content. Administrators also manage users and publish the site.</p></div></div>
+<div class="cols">
+<section class="panel">
+  <div class="ph"><span>Staff accounts</span></div>
+  <table class="t"><thead><tr><th>Username</th><th>Role</th><th>Since</th><th></th></tr></thead><tbody>
+  {% for name, u in users.items() %}<tr><td class="mono">{{ name }}</td><td>{{ u.role }}</td><td class="mono small">{{ u.created[:10] }}</td>
+    <td>{% if name != user.name %}<form method="post" action="/admin/users/{{ name }}/delete" data-confirm="Remove the account '{{ name }}'?">{{ csrf() }}<button class="lnk">remove</button></form>{% else %}<span class="muted small">you</span>{% endif %}</td></tr>{% endfor %}
+  </tbody></table>
+</section>
+<section class="panel">
+  <div class="ph"><span>Add a user, or set a new password</span></div>
+  <form method="post" action="/admin/users/add" class="editor">
+    {{ csrf() }}
+    <div class="fld"><label for="un">Username</label><input id="un" name="name" required autocomplete="off"></div>
+    <div class="fld"><label for="ur">Role</label><select id="ur" name="role"><option value="editor">Editor</option><option value="admin">Administrator</option></select></div>
+    <div class="fld wide"><label for="up">Password (10+ characters)</label><input id="up" name="password" type="password" minlength="10" required autocomplete="new-password"></div>
+    <div class="savebar"><button class="btn gold">Save account</button></div>
+  </form>
+  <div class="ph"><span>Change your own password</span></div>
+  <form method="post" action="/admin/account/password" class="editor">
+    {{ csrf() }}
+    <div class="fld wide"><label for="po">Current password</label><input id="po" name="old" type="password" required autocomplete="current-password"></div>
+    <div class="fld"><label for="pn">New password</label><input id="pn" name="new" type="password" minlength="10" required autocomplete="new-password"></div>
+    <div class="fld"><label for="pn2">Repeat</label><input id="pn2" name="new2" type="password" minlength="10" required autocomplete="new-password"></div>
+    <div class="savebar"><button class="btn">Change password</button></div>
+  </form>
+</section>
+</div>
+{% endblock %}

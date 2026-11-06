@@ -1,0 +1,26 @@
+{% extends "studio/base.html" %}
+{% block title %}{{ c.title }}{% endblock %}
+{% block main %}
+<div class="head">
+  <div><p class="eyebrow">{{ c.group }} · {{ c.file }}</p><h1>{{ c.title }} <span class="ct big">{{ items|length }}</span></h1>{% if c.help %}<p class="muted">{{ c.help }}</p>{% endif %}</div>
+  <a class="btn gold" href="/admin/c/{{ c.name }}/new">+ New</a>
+</div>
+<form class="search" method="get"><input name="q" value="{{ q }}" placeholder="Search {{ c.title|lower }}…" type="search"><button class="btn sm">Search</button>{% if q %}<a class="btn sm ghost" href="?">Clear</a>{% endif %}</form>
+<div class="panel">
+<table class="t list">
+  <thead><tr><th>{{ c.label|replace("_", " ")|capitalize }}</th>{% for col in c.cols %}<th>{{ col|replace("_", " ")|capitalize }}</th>{% endfor %}<th></th></tr></thead>
+  <tbody>
+  {% for key, i, it in items %}
+  <tr>
+    <td><a class="rec" href="/admin/c/{{ c.name }}/{{ key }}">{{ it.get(c.label) or "(untitled)" }}</a>{% if it.get("sample") %} <span class="tagm">sample</span>{% endif %}{% if c.id_key %}<span class="mono small muted"> {{ key }}</span>{% endif %}</td>
+    {% for col in c.cols %}<td class="small">{% set v = it.get(col) %}{% if v is mapping %}{{ v.values()|join(" ") }}{% elif v is iterable and v is not string %}{{ v|length }}{% else %}{{ v if v is not none }}{% endif %}{% if col == "progress" %}%{% endif %}</td>{% endfor %}
+    <td class="acts">
+      {% if not c.sort_key and not q %}<form method="post" action="/admin/c/{{ c.name }}/{{ key }}/move">{{ csrf() }}<button name="dir" value="up" class="lnk" title="Move up" {% if loop.first %}disabled{% endif %}>↑</button><button name="dir" value="down" class="lnk" title="Move down" {% if loop.last %}disabled{% endif %}>↓</button></form>{% endif %}
+      {% if c.public_url and c.id_key %}<a class="lnk" href="{{ c.public_url.replace('{id}', key) }}" target="_blank" title="Open on the site">↗</a>{% endif %}
+    </td>
+  </tr>
+  {% else %}<tr><td colspan="9" class="muted">Nothing here{% if q %} for “{{ q }}”{% endif %}.</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

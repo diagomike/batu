@@ -1,0 +1,14 @@
+{% extends "studio/base.html" %}
+{% block title %}Sign in{% endblock %}
+{% block gate %}
+<div class="gate-box">
+  <p class="eyebrow">Batu Studio</p>
+  <h1>Sign in</h1>
+  <form method="post" action="/admin/login" class="form">
+    <label>Username<input name="name" required autocomplete="username" autofocus></label>
+    <label>Password<input name="password" type="password" required autocomplete="current-password"></label>
+    <button class="btn gold">Sign in</button>
+  </form>
+  <p class="muted small">Forgot your password? Ask an administrator to set a new one under Users.</p>
+</div>
+{% endblock %}

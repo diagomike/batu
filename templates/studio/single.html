@@ -1,0 +1,14 @@
+{% extends "studio/base.html" %}
+{% import "studio/_fields.html" as FX with context %}
+{% block title %}{{ s.title }}{% endblock %}
+{% block main %}
+{% set media = S.options_for(S.F("x", "x", "select", source="media"), content_mod)|map("first")|list %}
+<div class="head"><div><p class="eyebrow">{{ s.group }} · {{ s.file }}</p><h1>{{ s.title }}</h1>{% if s.help %}<p class="muted">{{ s.help }}</p>{% endif %}</div></div>
+{% if errors %}<div class="msg bad" role="alert"><b>Not saved yet:</b><ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>{% endif %}
+{% include "studio/_untranslated.html" %}
+<form method="post" action="/admin/s/{{ s.name }}" class="editor" data-guard>
+  {{ csrf() }}
+  <div class="grid2">{% for f in s.fields %}{{ FX.field(f, rec.get(f.key), "", content_mod, media) }}{% endfor %}</div>
+  <div class="savebar"><button class="btn gold">Save</button><span class="muted small">Previous versions are kept under History.</span></div>
+</form>
+{% endblock %}

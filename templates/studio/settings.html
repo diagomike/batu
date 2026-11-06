@@ -1,0 +1,33 @@
+{% extends "studio/base.html" %}
+{% block title %}AI assistant{% endblock %}
+{% block main %}
+<div class="head"><div><p class="eyebrow">System · var/studio_settings.json</p><h1>AI assistant</h1>
+<p class="muted">The “Ask Batu” assistant writes answers with Google Gemini when it has a working key. It tries the key saved here first, then the key in <span class="mono">portal/.env</span>. With neither, it still answers by quoting the city's own pages.</p></div></div>
+
+<div class="tiles">
+  <div class="tile"><span class="k">In use now</span><b class="sm">{{ {"studio": "Studio key", "env": ".env key", "none": "No key"}.get(state.active, "checking…") }}</b><span class="s">{{ "AI-written answers" if on else "quoted answers" }}{% if state.checked %} · checked {{ state.checked.replace("T", " ")[11:16] }}{% endif %}</span></div>
+  <div class="tile"><span class="k">1 · Studio key</span><b class="sm">{{ studio_key or "not set" }}</b><span class="s">{% if state.results.studio %}{{ "works" if state.results.studio.ok else state.results.studio.error }}{% elif studio_key %}not checked yet{% endif %}{% if meta.updated_by %} · set by {{ meta.updated_by }}{% endif %}</span></div>
+  <div class="tile"><span class="k">2 · .env key</span><b class="sm">{{ env_key or "not set" }}</b><span class="s">{% if state.results.env %}{{ "works" if state.results.env.ok else state.results.env.error }}{% elif env_key %}used if the studio key fails{% endif %}</span></div>
+  <div class="tile"><span class="k">3 · Fallback</span><b class="sm">Quotes</b><span class="s">always available</span></div>
+</div>
+
+<div class="cols">
+<section class="panel">
+  <div class="ph"><span>{{ "Replace" if studio_key else "Set" }} the studio key</span></div>
+  <form method="post" action="/admin/settings/gemini" class="editor">
+    {{ csrf() }}
+    <div class="fld wide"><label for="gk">Gemini API key</label><input id="gk" name="key" type="password" autocomplete="off" spellcheck="false" placeholder="AIza…" required>
+      <p class="help">Get a free key at aistudio.google.com/apikey. The studio tests it with Google before saving and keeps it on this computer only (var/, never in the code repository). It is never shown again in full.</p></div>
+    <div class="savebar"><button class="btn gold" name="action" value="save">Test and save</button></div>
+  </form>
+</section>
+<section class="panel">
+  <div class="ph"><span>Check or remove</span></div>
+  <div class="editor">
+    <form method="post" action="/admin/settings/gemini" style="display:inline">{{ csrf() }}<button class="btn" name="action" value="test">Check the keys again</button></form>
+    {% if studio_key %}<form method="post" action="/admin/settings/gemini" style="display:inline" data-confirm="Remove the studio key? The assistant falls back to the .env key, or to quoted answers.">{{ csrf() }}<button class="btn bad sm" name="action" value="remove">Remove studio key</button></form>{% endif %}
+    <p class="help" style="margin-top:12px">A key that Google rejects or that runs out of quota is skipped at the next check, and the next one in the list is used.</p>
+  </div>
+</section>
+</div>
+{% endblock %}

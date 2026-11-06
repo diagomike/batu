@@ -108,22 +108,15 @@ def con():
 
 def _seed():
     c = _con
-    if c.execute("select count(*) from news").fetchone()[0] == 0:
-        seed = content.news_seed()
-        for n in seed["news"]:
-            c.execute(
-                "insert into news(id,date,category,title,summary,body,source,url,image,kind,sample,created_via) values(?,?,?,?,?,?,?,?,?,?,?,?)",
-                (n["id"], n["date"], n["category"], n["title"], n["summary"], n["body"], n["source"], n["url"], n.get("image"), "news", 0, "seed"),
-            )
-        for n in seed["notices"]:
-            c.execute(
-                "insert into news(id,date,category,title,summary,body,source,url,image,kind,sample,created_via) values(?,?,?,?,?,?,?,?,?,?,?,?)",
-                (n["id"], n["date"], n["kind"], n["title"], n["text"], n["text"], "City of Batu", "", None, "notice", 1 if n.get("sample") else 0, "seed"),
-            )
-        # A sample bill so the payment flow can be tried end to end.
-        _insert_request("LL-BTU-0001", "bill", "land-lease-payment", "Land lease instalment 2019 E.C. (sample bill)",
-                        {"holder": "Sample land holder", "plot": "Plot B-114 (sample)"}, "awaiting_payment", 4200)
-        c.commit()
+    # News and notices now live in data/news.json; move anything pushed into the old table there.
+    from . import store
+    moved = store.migrate_db_news(c)
+    if moved:
+        print(f"[db] moved {moved} news items from SQLite to data/news.json")
+    # A sample bill so the payment flow can be tried end to end.
+    _insert_request("LL-BTU-0001", "bill", "land-lease-payment", "Land lease instalment 2019 E.C. (sample bill)",
+                    {"holder": "Sample land holder", "plot": "Plot B-114 (sample)"}, "awaiting_payment", 4200)
+    c.commit()
 
 
 def new_ref(prefix: str) -> str:
@@ -207,32 +200,38 @@ def complete_payment(pid: str) -> str | None:
     return receipt
 
 
+# News and notices: kept here under their old names for existing callers; the data is in data/news.json.
 def list_news(kind="news", limit=50):
-    rows = con().execute("select * from news where kind=? order by date desc limit ?", (kind, limit)).fetchall()
-    return [dict(r) for r in rows]
+    from . import store
+    return store.list_news(kind, limit)
 
 
 def get_news(nid: str):
-    row = con().execute("select * from news where id=?", (nid,)).fetchone()
-    return dict(row) if row else None
+    from . import store
+    return store.get_news(nid)
 
 
 def add_news(item: dict, kind="news", via="api") -> str:
-    nid = item.get("id") or f"{kind}-{dt.date.today().isoformat()}-{secrets.token_hex(2)}"
-    with _lock:
-        con().execute(
-            "insert or replace into news(id,date,category,title,summary,body,source,url,image,kind,sample,created_via) values(?,?,?,?,?,?,?,?,?,?,?,?)",
-            (nid, item.get("date") or dt.date.today().isoformat(), item.get("category", "City"), item["title"],
-             item.get("summary", ""), item.get("body", item.get("summary", "")), item.get("source", "City of Batu"),
-             item.get("url", ""), item.get("image"), kind, 1 if item.get("sample") else 0, via),
-        )
-        con().commit()
-    return nid
+    from . import store
+    return store.add_news(item, kind=kind, via=via)
 
 
 def delete_news(nid: str):
+    from . import store
+    store.delete_news(nid)
+
+
+def list_payments(limit=200):
+    return [dict(r) for r in con().execute("select * from payments order by created desc limit ?", (limit,)).fetchall()]
+
+
+def list_subscriptions(limit=500):
+    return [dict(r) for r in con().execute("select * from subscriptions order by id desc limit ?", (limit,)).fetchall()]
+
+
+def delete_subscription(sid: int):
     with _lock:
-        con().execute("delete from news where id=?", (nid,))
+        con().execute("delete from subscriptions where id=?", (sid,))
         con().commit()
 
 

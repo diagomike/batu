@@ -1,0 +1,33 @@
+{% extends "studio/base.html" %}
+{% block title %}Overview{% endblock %}
+{% block main %}
+<div class="head"><div><p class="eyebrow">SHEET S-00 — Overview</p><h1>Good {{ "morning" if now.hour < 12 else ("afternoon" if now.hour < 18 else "evening") }}, {{ user.name }}</h1></div>
+{% if user.role == 'admin' %}<a class="btn gold" href="/admin/publish">Publish the site ↑</a>{% endif %}</div>
+
+<div class="tiles">
+  <a class="tile" href="/admin/requests"><span class="k">Open requests</span><b>{{ open_count }}</b><span class="s">reports, applications, bookings, bills</span></a>
+  <a class="tile" href="/admin/c/news"><span class="k">News</span><b>{{ nav["News"][0][3] }}</b><span class="s">add a story or a notice</span></a>
+  <a class="tile" href="/admin/translations"><span class="k">Need translating</span>
+    {% if missing.error %}<b>?</b><span class="s">{{ missing.error }}</span>{% else %}<b>{{ [missing.om.missing, missing.am.missing]|max }}</b><span class="s">OM {{ missing.om.missing }} · AM {{ missing.am.missing }} of {{ missing.total }}</span>{% endif %}</a>
+  <a class="tile" href="/admin/publish"><span class="k">Last published</span><b class="sm">{{ pub.last.at.replace("T", " ")[:16] if pub.last.at else "never" }}</b><span class="s">{{ ("by " ~ pub.last.by) if pub.last.by else "build and upload the public site" }}</span></a>
+</div>
+
+<div class="cols">
+  <section class="panel">
+    <div class="ph"><span>Edit the site</span></div>
+    <div class="quicklist">
+      {% for g in groups %}<div><p class="eyebrow">{{ g }}</p>{% for kind, name, title, n in nav[g] %}<a href="/admin/{{ kind }}/{{ name }}">{{ title }}{% if n is not none %} <span class="ct">{{ n }}</span>{% endif %}</a>{% endfor %}</div>{% endfor %}
+      <div><p class="eyebrow">Library</p><a href="/admin/media">Photos</a><a href="/admin/translations">Translations</a><a href="/admin/history">History</a></div>
+    </div>
+  </section>
+  <section class="panel">
+    <div class="ph"><span>Latest requests</span><a href="/admin/requests" class="mono">all →</a></div>
+    <table class="t"><tbody>{% for r in reqs %}<tr><td class="mono"><a href="/admin/requests/{{ r.ref }}">{{ r.ref }}</a></td><td>{{ r.title }}</td><td><span class="st st-{{ r.status }}">{{ r.status_label }}</span></td></tr>{% else %}<tr><td class="muted">No requests yet.</td></tr>{% endfor %}</tbody></table>
+  </section>
+</div>
+
+<section class="panel">
+  <div class="ph"><span>Recent changes</span><a href="/admin/history" class="mono">history →</a></div>
+  <table class="t"><tbody>{% for h in recent %}<tr><td class="mono small">{{ h.when }}</td><td>{{ h.who }}</td><td>{{ h.note or h.file }}</td><td class="mono small"><a href="/admin/history?file={{ h.file }}">{{ h.file }}</a></td></tr>{% else %}<tr><td class="muted">Nothing changed in the studio yet.</td></tr>{% endfor %}</tbody></table>
+</section>
+{% endblock %}
