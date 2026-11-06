@@ -418,8 +418,14 @@ async def _studio_login(request: Request, exc):
     return RedirectResponse("/admin?err=Please+sign+in.", status_code=303)
 
 
+# /om/..., /am/..., /en/...: language in the address, same as the static build (app/langurls.py)
+from .langurls import LangPrefix  # noqa: E402
+
+app.add_middleware(LangPrefix)
+
+
 def _check(token: str):
-    """Bearer token for machine pushes (POST /api/admin/news)."""
+    # bearer token for machine pushes (POST /api/admin/news)
     if not secrets.compare_digest(token or "", ADMIN_TOKEN):
         raise HTTPException(403, "Wrong admin token")
 

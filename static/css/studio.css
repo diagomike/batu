@@ -30,6 +30,8 @@ h1{font-size:clamp(1.6rem,4vw,2.3rem)}
 .top-r{margin-left:auto;display:flex;align-items:center;gap:12px;font-size:.74rem}
 .top-r a,.top-r .lnk{color:#C9D6E1}
 .top-r .who{display:none}
+.top-r{white-space:nowrap}
+@media (max-width:899px){.brand .mono,.top-r > a{display:none}.brand b{white-space:nowrap}}
 .menu-btn{margin-left:auto;cursor:pointer;font-size:1.2rem;padding:4px 8px;border:1px solid rgba(255,255,255,.3)}
 .menu-btn + .top-r{margin-left:8px}
 .shell{display:block}
@@ -73,6 +75,7 @@ summary.ph{cursor:pointer;list-style:none}
 .t th{text-align:left;font:500 .66rem var(--f-m);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--rule2);background:var(--sunk)}
 .t td{padding:8px 10px;border-bottom:1px solid var(--rule);vertical-align:top}
 .t tr:last-child td{border-bottom:0}
+.t td.mono{white-space:nowrap}
 .panel{overflow-x:auto}
 .t a.rec{font-weight:600;text-decoration:none;color:var(--fg)}
 .t a.rec:hover{text-decoration:underline}
@@ -153,6 +156,7 @@ form.editor{background:var(--surface);border:1px solid var(--rule2)}
 
 /* translations */
 .trtable td.en{width:34%;font-size:.88rem}
+@media (max-width:759px){.trtable thead{display:none}.trtable tr{display:block;border-bottom:2px solid var(--rule2)}.trtable td{display:block;width:auto!important;border:0}.trtable td.en{font-weight:600;background:var(--sunk)}.trtable td:nth-child(2)::before{content:"Afaan Oromoo";font:500 .62rem var(--f-m);color:var(--muted)}.trtable td:nth-child(3)::before{content:"Amharic";font:500 .62rem var(--f-m);color:var(--muted)}}
 .trtable textarea{font-size:.9rem;min-height:56px}
 .trtable textarea.empty{border-color:var(--warn);background:var(--gold-soft)}
 .trtable .check{margin-top:4px}

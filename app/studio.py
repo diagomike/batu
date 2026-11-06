@@ -948,11 +948,23 @@ def _publish(who: str, upload: bool):
     _pub.update(running=True, log=[], started=dt.datetime.now().isoformat(timespec="seconds"), finished=None, ok=None)
     log = _pub["log"].append
     try:
-        spec = importlib.util.spec_from_file_location("batu_build", content.ROOT / "tools" / "build.py")
-        mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        result = mod.publish(upload=upload, log=log)
-        info = {"at": dt.datetime.now().isoformat(timespec="seconds"), "by": who, "uploaded": upload} | (result or {})
+        # The build runs as its own process: it swaps in a throwaway database and turns AI off,
+        # which must never touch this running server.
+        import subprocess
+        import sys
+        cmd = [sys.executable, "-u", str(content.ROOT / "tools" / "build.py"), "--zip"] + (["--upload"] if upload else [])
+        proc = subprocess.Popen(cmd, cwd=str(content.ROOT), stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                text=True, encoding="utf8", errors="replace", env=os.environ | {"BATU_BUILD": "1"})
+        result = {}
+        for line in proc.stdout:
+            line = line.rstrip()
+            if line.startswith("RESULT "):
+                result = json.loads(line[7:])
+            elif line and "Warning" not in line and "from starlette" not in line:
+                log(line)
+        if proc.wait() != 0:
+            raise RuntimeError(f"the build stopped (exit code {proc.returncode})")
+        info = {"at": dt.datetime.now().isoformat(timespec="seconds"), "by": who, "uploaded": upload} | result
         (VAR / "last_publish.json").write_text(json.dumps(info, indent=2), encoding="utf8")
         _pub["ok"] = True
     except Exception as e:  # noqa: BLE001
