@@ -25,6 +25,7 @@ sys.path.insert(0, str(ROOT))
 
 # No AI key and a throwaway database for the build, whatever is in .env or var/.
 os.environ["GEMINI_API_KEY"] = ""
+os.environ["BATU_BUILD"] = "1"  # also stops a key saved in the studio from switching AI on (app/settings.py)
 os.environ["DEFAULT_LANG"] = "en"
 _tmp = Path(tempfile.mkdtemp(prefix="batu-build-"))
 
