@@ -27,7 +27,10 @@ jobs:
       - id: pages
         uses: actions/configure-pages@v5
       # base_path is "/batu" on github.io, or "" once a custom domain is set
-      - run: python tools/build_static.py --base "${{ steps.pages.outputs.base_path }}/" --out build
+      # ASK_API_URL: the Render server that answers questions (repo variable, or the default name)
+      - run: python tools/build_static.py --base "${{ steps.pages.outputs.base_path }}/" --out build --api "$ASK_API_URL"
+        env:
+          ASK_API_URL: ${{ vars.ASK_API_URL || 'https://batu-ask.onrender.com' }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: build

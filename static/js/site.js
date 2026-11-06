@@ -15,8 +15,16 @@
   }
 
   /* ---------- assistant ---------- */
+  /* On the static copy (GitHub Pages, Plesk) pages live under BATU_BASE plus a language folder,
+     and questions go to the API server in BATU_API. On the live server both are empty. */
+  function pageUrl(u) {
+    if (!window.BATU_STATIC || !u || u.charAt(0) !== "/") return u;
+    var m = u.match(/^([^?#]*)(.*)$/), p = m[1].replace(/^\/|\/$/g, "");
+    return (window.BATU_BASE || "/") + (B.lang === "en" ? "" : B.lang + "/") + (p ? p + "/" : "") + m[2];
+  }
   function renderAnswer(log, res) {
     var m = el("div", "msg a" + (res.emergency ? " emergency" : ""));
+    m.setAttribute("data-label", B.name || "Ask Batu");
     m.appendChild(document.createTextNode(res.answer || res.error || B.error));
     if (res.mode && B.mode[res.mode]) {
       m.appendChild(el("div", "meta", B.mode[res.mode] + (res.model ? " · " + res.model.replace("models/", "") : "")));
@@ -26,7 +34,7 @@
       s.appendChild(el("b", null, B.sources));
       res.sources.forEach(function (src) {
         var a = el("a", null, "→ " + src.title + (src.sample ? " (" + B.sample + ")" : ""));
-        a.href = src.url;
+        a.href = pageUrl(src.url);
         s.appendChild(a);
       });
       m.appendChild(s);
@@ -45,9 +53,15 @@
     wait.appendChild(dots);
     log.appendChild(wait);
     wait.scrollIntoView({ block: "nearest" });
-    fetch("/api/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ q: q, lang: B.lang }) })
+    // The last two exchanges go along so follow-ups like "how much is it?" make sense.
+    var hist = log._hist || (log._hist = []);
+    fetch((window.BATU_API || "").replace(/\/$/, "") + "/api/ask", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ q: q, lang: B.lang, history: hist.slice(-2) }) })
       .then(function (r) { return r.json(); })
-      .then(function (res) { wait.remove(); renderAnswer(log, res); })
+      .then(function (res) {
+        wait.remove(); renderAnswer(log, res);
+        if (res.answer && !res.emergency) hist.push({ q: q, a: res.answer.slice(0, 400) });
+      })
       .catch(function () { wait.remove(); renderAnswer(log, { answer: B.error }); });
   }
 
@@ -87,6 +101,9 @@
     document.querySelectorAll("#suggest button").forEach(function (b) {
       b.addEventListener("click", function () { ask(b.dataset.q, chatlog); });
     });
+    // The static copy cannot read ?q= on the server, so pick it up here.
+    var qs = (location.search.match(/[?&]q=([^&]*)/) || [])[1];
+    if (window.BATU_STATIC && qs && !chatq.value) { chatq.value = decodeURIComponent(qs.replace(/\+/g, " ")); window.ASK_AUTO = true; }
     if (window.ASK_AUTO && chatq.value) { var q0 = chatq.value; chatq.value = ""; ask(q0, chatlog); }
   }
 
@@ -226,7 +243,7 @@
     var render = function () {
       var q = pin.value.trim().toLowerCase();
       shown = (q ? palItems.filter(function (it) { return it.t.toLowerCase().indexOf(q) >= 0; }) : palItems.slice(0, 14)).slice(0, 9);
-      if (q) shown.push({ t: (B.lang === "om" ? "Gaafadhaa: " : B.lang === "am" ? "ጠይቅ፡ " : "Ask Batu: ") + pin.value.trim(), u: "/ask?q=" + encodeURIComponent(pin.value.trim()), k: "AI" });
+      if (q) shown.push({ t: (B.lang === "om" ? "Gaafadhaa: " : B.lang === "am" ? "ጠይቅ፡ " : "Ask Batu: ") + pin.value.trim(), u: pageUrl("/ask?q=" + encodeURIComponent(pin.value.trim())), k: "AI" });
       sel = Math.min(sel, shown.length - 1);
       plist.innerHTML = "";
       shown.forEach(function (it, i) {

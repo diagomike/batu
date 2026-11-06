@@ -444,7 +444,7 @@ figcaption,.credit-line{font-family:var(--f-mono);font-size:.68rem;color:var(--m
 .msg{max-width:min(660px,94%);padding:12px 14px;font-size:.95rem;white-space:pre-wrap;line-height:1.55;border:1px solid var(--rule-strong)}
 .msg.u{justify-self:end;background:var(--ink);color:#fff;border-color:var(--ink)}
 .msg.a{background:var(--surface)}
-.msg.a::before{content:"ASK BATU";display:block;font-family:var(--f-mono);font-size:.62rem;letter-spacing:.12em;color:var(--blue);margin-bottom:6px}
+.msg.a::before{content:attr(data-label);text-transform:uppercase;display:block;font-family:var(--f-mono);font-size:.62rem;letter-spacing:.12em;color:var(--blue);margin-bottom:6px}
 .msg.a.typing::before{content:none}
 .msg.a.emergency{border-color:var(--danger);background:var(--danger-soft)}
 .msg .src{margin-top:10px;padding-top:8px;border-top:1px dashed var(--rule);display:grid;gap:3px;font-size:.8rem;white-space:normal}

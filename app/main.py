@@ -11,6 +11,7 @@ from pathlib import Path
 
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.concurrency import run_in_threadpool
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from markupsafe import Markup, escape
@@ -46,6 +47,14 @@ async def lifespan(app):
 
 app = FastAPI(title="Batu City Administration", docs_url="/api/docs", redoc_url=None, lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=content.ROOT / "static"), name="static")
+
+# The static copy of the site (GitHub Pages, Plesk) calls /api/ask on this server from another origin.
+_origins = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "https://diagomike.github.io").split(",") if o.strip()]
+if _origins:
+    from fastapi.middleware.cors import CORSMiddleware
+
+    app.add_middleware(CORSMiddleware, allow_origins=_origins, allow_methods=["GET", "POST"],
+                       allow_headers=["Content-Type"], max_age=86400)
 templates = Jinja2Templates(directory=str(content.ROOT / "templates"))
 
 
@@ -248,20 +257,31 @@ _hits: dict[str, deque] = defaultdict(deque)
 
 @app.post("/api/ask")
 async def api_ask(request: Request):
-    ip = request.client.host if request.client else "?"
+    # Behind a proxy (Render, Plesk) the visitor's address is the first X-Forwarded-For entry.
+    fwd = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+    ip = fwd or (request.client.host if request.client else "?")
     now = time.time()
     dq = _hits[ip]
     while dq and now - dq[0] > 60:
         dq.popleft()
-    if len(dq) >= 15:
+    if len(dq) >= 10:
         return JSONResponse({"error": "Too many questions in a minute. Please wait a moment."}, status_code=429)
     dq.append(now)
-    body = await request.json()
+    try:
+        body = await request.json()
+    except ValueError:
+        return JSONResponse({"error": "Send JSON: {\"q\": \"...\", \"lang\": \"om|am|en\"}"}, status_code=400)
     lang = body.get("lang") if body.get("lang") in content.LANGS else lang_of(request)
-    res = answer(str(body.get("q", "")), lang)
+    history = body.get("history") if isinstance(body.get("history"), list) else None
+    res = await run_in_threadpool(answer, str(body.get("q", "")), lang, history)
     for s in res.get("sources", []):
         s["title"] = content.tr(s["title"], lang)
     return res
+
+
+@app.get("/api/health")
+def api_health():
+    return {"ok": True, "docs": len(INDEX.docs), "gemini": INDEX.gemini.enabled, "model": INDEX.gemini.gen_model}
 
 
 # ---------- report a problem ----------

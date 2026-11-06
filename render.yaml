@@ -1,0 +1,25 @@
+# Render blueprint: the Batu app as an API server for the assistant (free plan).
+# Render dashboard -> New -> Blueprint -> pick this repository. It asks for GEMINI_API_KEY.
+services:
+  - type: web
+    name: batu-ask
+    runtime: python
+    plan: free
+    region: frankfurt
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: GEMINI_API_KEY
+        sync: false            # you paste it in the Render dashboard; never commit it
+      - key: ALLOWED_ORIGINS
+        value: https://diagomike.github.io
+      - key: ASK_DAILY_LIMIT
+        value: "300"           # AI answers per day; after that the assistant quotes records
+      - key: DEFAULT_LANG
+        value: en
+      - key: ADMIN_TOKEN
+        generateValue: true    # random, so the staff desk on this public server is not open

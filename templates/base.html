@@ -170,7 +170,7 @@ c.remove("cine")},ms)})(3500)})(document,window);
   <form id="askform"><label class="sr" for="askq">{{ t("Your question") }}</label><input id="askq" type="text" autocomplete="off" placeholder="{{ t('Type your question') }}"><button class="btn btn-lake btn-sm">{{ t("Ask") }}</button></form>
 </section>
 {% endif %}
-<script>window.BATU={lang:"{{ lang }}",sources:"{{ t('Sources') }}",sample:"{{ t('contains sample data') }}",thinking:"{{ t('Looking it up…') }}",step:"{{ t('Step') }}",of:"{{ t('of') }}",next:"{{ t('Next') }}",back:"{{ t('Back') }}",review:"{{ t('Check your answers') }}",processing:"{{ t('Waiting for confirmation…') }}",confirmed:"{{ t('Payment confirmed') }}",error:"{{ t('Sorry, something went wrong. Please try again.') }}",mode:{gemini:"{{ t('Answer written by AI from the sources below') }}",keyword:"{{ t('Quoted from the city records below') }}",emergency:"{{ t('Emergency') }}"}};</script>
+<script>window.BATU={lang:"{{ lang }}",name:"{{ t('Ask Batu') }}",sources:"{{ t('Sources') }}",sample:"{{ t('contains sample data') }}",thinking:"{{ t('Looking it up…') }}",step:"{{ t('Step') }}",of:"{{ t('of') }}",next:"{{ t('Next') }}",back:"{{ t('Back') }}",review:"{{ t('Check your answers') }}",processing:"{{ t('Waiting for confirmation…') }}",confirmed:"{{ t('Payment confirmed') }}",error:"{{ t('Sorry, something went wrong. Please try again.') }}",mode:{gemini:"{{ t('Answer written by AI from the sources below') }}",keyword:"{{ t('Quoted from the city records below') }}",emergency:"{{ t('Emergency') }}"}};</script>
 <script src="/static/js/cinema.js" defer></script>
 <script src="/static/js/site.js" defer></script>
 {% block scripts %}{% endblock %}

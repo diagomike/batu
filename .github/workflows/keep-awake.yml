@@ -1,0 +1,16 @@
+name: Keep the assistant API awake
+
+# Render's free plan sleeps after 15 minutes without traffic, and waking takes
+# about a minute. A light ping every 10 minutes keeps answers quick.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -fsS --max-time 90 "${ASK_API_URL}/api/health" || echo "API not reachable yet"
+        env:
+          ASK_API_URL: ${{ vars.ASK_API_URL || 'https://batu-ask.onrender.com' }}

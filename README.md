@@ -61,15 +61,26 @@ Set `GOOGLE_TRANSLATE_API_KEY` to use the official Cloud Translation API. The si
 ## Ask Batu (lightweight RAG)
 
 1. `corpus.py` turns services, offices, kebeles, places, events, facts, projects, news, notices, tenders and vacancies into about 100 small documents, each with a link and a "sample" flag.
-2. `index.py` builds a BM25 keyword index over English plus the Oromo and Amharic translations. With `GEMINI_API_KEY` it also stores Gemini embeddings in `var/vectors.npz` and merges both rankings (reciprocal rank fusion).
+2. `index.py` builds a BM25 keyword index over English plus the Oromo and Amharic translations. With `GEMINI_API_KEY` it also embeds every document in all three languages (`gemini-embedding-2`, cached in `var/vectors.npz`), so an Oromo or Amharic question finds the record directly, and merges both rankings.
 3. `agent.py` answers:
-   - emergency words → emergency numbers immediately, no model;
+   - emergency words (any of the three languages) → emergency numbers immediately, no model;
    - politics, legal or medical questions → polite redirect;
-   - otherwise the top 6 documents go to Gemini (free tier, Flash model) with strict rules: answer only from sources, cite them, reply in the user's language, say when something is a sample, admit when it is not found;
-   - with no key or on an API error → the best matching record is quoted directly.
-4. Questions are logged with phone and ID numbers removed (`/admin#asks`). `/assistant` is the public "how it works" page.
+   - otherwise the top 4 documents go to Gemini, each in English and in the selected language, with a glossary of the site's own terms (Tajaajiloota, Gandoota, Bulchiinsa Magaalaa…). The answer must be in the language selected on the site, whatever language the question is in;
+   - `lang.py` checks the answer's language; if it is wrong, one rewrite is requested, and if that fails the record is quoted instead;
+   - the last two exchanges go along, so follow-ups ("how long does it take?") work;
+   - with no key, on an API error, or after `ASK_DAILY_LIMIT` AI answers in a day → the best matching record is quoted directly.
+4. Model choice saves tokens: the newest Flash-Lite answers, a full Flash model steps in only when Lite is rate limited. Pin models with `GEMINI_MODEL` (comma-separated).
+5. Questions are logged with phone and ID numbers removed (`/admin#asks`). `/assistant` is the public "how it works" page.
 
-The free Gemini tier may use inputs to improve Google's products: do not send personal data in the demo. The model sits behind `rag/llm.py` and can be swapped.
+### Assistant API for the static site (Render)
+
+The static copy on GitHub Pages cannot run Python, so it sends questions to this app running on Render's free plan (`render.yaml`):
+
+1. render.com → **New → Blueprint** → pick this repository → enter `GEMINI_API_KEY` when asked.
+2. If the service URL is not `https://batu-ask.onrender.com`, set the repository variable `ASK_API_URL` (GitHub → Settings → Secrets and variables → Actions → Variables) and re-run the Pages workflow.
+3. `.github/workflows/keep-awake.yml` pings `/api/health` every 10 minutes so the free server does not fall asleep.
+
+`ALLOWED_ORIGINS` lists the sites that may call the API from a browser. The free Gemini tier may use inputs to improve Google's products: do not send personal data in the demo. The model sits behind `rag/llm.py` and can be swapped.
 
 ## Push news from another system
 

@@ -2,6 +2,7 @@
 
     python tools/build_static.py                 # site served at /
     python tools/build_static.py --base /batu/   # site served at /batu/ (GitHub project page)
+    python tools/build_static.py --api https://batu-ask.onrender.com   # assistant answers via that server
 
 Every public page is rendered by the real app and written as <path>/index.html,
 once per language: English at the root, Afaan Oromoo under om/, Amharic under am/.
@@ -92,10 +93,13 @@ class Rewriter:
         return text
 
 
+# Settings read by site.js; must come before it, so this goes into <head>.
+HEAD_JS = "<script>window.BATU_STATIC=true;window.BATU_BASE=%(base)s;window.BATU_API=%(api)s;</script>"
+
 STATIC_JS = """<script>
 (function(){
-  var B=window.BATU||{};window.BATU_STATIC=true;window.BATU_BASE=%(base)s;
-  B.error=%(ask)s;
+  var B=window.BATU||{};
+  if(!window.BATU_API)B.error=%(ask)s;
   document.addEventListener("submit",function(e){
     var f=e.target;if(!f||(f.getAttribute("method")||"").toLowerCase()!=="post")return;
     e.preventDefault();e.stopImmediatePropagation();
@@ -108,7 +112,7 @@ STATIC_JS = """<script>
 """
 
 
-def build(out: Path, base: str):
+def build(out: Path, base: str, api: str = ""):
     if not base.startswith("/"):
         base = "/" + base
     if not base.endswith("/"):
@@ -125,6 +129,7 @@ def build(out: Path, base: str):
         for lang in LANG_PREFIX:
             rw = Rewriter(base, lang)
             t = lambda s: content.tr(s, lang)  # noqa: E731
+            head = HEAD_JS % {"base": json.dumps(base), "api": json.dumps(api.rstrip("/"))}
             js = STATIC_JS % {
                 "base": json.dumps(base),
                 "ask": json.dumps(t("The assistant needs the live city server. This preview cannot answer questions yet.")),
@@ -135,7 +140,7 @@ def build(out: Path, base: str):
                 if r.status_code != 200:
                     print(f"  skip {lang} {p}: {r.status_code}")
                     continue
-                html = rw.html(r.text).replace("</body>", js + "</body>", 1)
+                html = rw.html(r.text).replace("<head>", "<head>" + head, 1).replace("</body>", js + "</body>", 1)
                 dest = out / LANG_PREFIX[lang] / p.strip("/") / "index.html"
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 dest.write_text(html, encoding="utf8")
@@ -145,17 +150,12 @@ def build(out: Path, base: str):
         if "<html" in r.text:
             (out / "404.html").write_text(Rewriter(base, "en").html(r.text), encoding="utf8")
 
-    # Static files, with root-relative URLs inside CSS/JS pointed at the base.
+    # Static files, with root-relative URLs inside CSS pointed at the base (site.js handles its own links).
     shutil.copytree(ROOT / "static", out / "static")
     for f in (out / "static").rglob("*"):
         if f.suffix == ".css":
             f.write_text(f.read_text(encoding="utf8").replace('url("/static/', f'url("{base}static/')
                          .replace("url(/static/", f"url({base}static/"), encoding="utf8")
-        elif f.suffix == ".js":
-            s = f.read_text(encoding="utf8")
-            s = s.replace('fetch("/api/ask"', f'fetch("{base}api/ask"')
-            s = s.replace('u: "/ask?q="', 'u: (window.BATU_BASE||"/") + (window.BATU.lang==="en"?"":window.BATU.lang+"/") + "ask/?q="')
-            f.write_text(s, encoding="utf8")
     (out / ".nojekyll").write_text("")
     print(f"wrote {written} pages for {len(LANG_PREFIX)} languages to {out} (base {base})")
 
@@ -164,8 +164,10 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--base", default="/", help="URL path the site is served under, e.g. /batu/")
     ap.add_argument("--out", default=str(ROOT / "build"), help="output folder")
+    ap.add_argument("--api", default=os.getenv("ASK_API_URL", ""),
+                    help="server that answers /api/ask, e.g. https://batu-ask.onrender.com (empty: assistant shows a note)")
     a = ap.parse_args()
     try:
-        build(Path(a.out), a.base)
+        build(Path(a.out), a.base, a.api)
     finally:
         shutil.rmtree(_tmp, ignore_errors=True)

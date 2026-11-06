@@ -1,5 +1,6 @@
 """Hybrid retrieval: BM25 keyword search over English and translated text,
-plus Gemini embeddings when an API key is set. Results are merged with
+plus Gemini embeddings of every record in English, Afaan Oromoo and Amharic
+when an API key is set (one-time, cached in var/vectors.npz). Results are merged with
 reciprocal rank fusion. Everything is kept in memory and in one small file.
 """
 from __future__ import annotations
@@ -18,6 +19,7 @@ from . import corpus
 from .llm import Gemini
 
 VEC_PATH = content.ROOT / "var" / "vectors.npz"
+VEC_LANGS = ("en", "om", "am")  # every record is embedded in each language
 TOKEN = re.compile(r"[\w']+", re.UNICODE)
 STOP = set("""a an the and or of to in on at for with is are was be by it this that from as your you can i my me we our how what get much many
 when where which who do does need get have has will not if any about into than then there these those its it's
@@ -60,6 +62,12 @@ class Index:
             parts += [x for x in (content.tr(p, lang) for p in d.get("pieces", [])) if x not in d.get("pieces", [])]
         return "\n".join(parts)
 
+    def localized(self, d, lang: str) -> str:
+        """The record in one language, using the site's own translations (English when missing)."""
+        if lang == "en":
+            return d["title"] + "\n" + d["text"]
+        return "\n".join(content.tr(p, lang) for p in d.get("pieces", []))
+
     def build(self, use_embeddings: bool = True):
         docs = corpus.documents()
         tf, df, lens = [], Counter(), []
@@ -68,14 +76,22 @@ class Index:
             tf.append(c)
             df.update(c.keys())
             lens.append(sum(c.values()))
-        version = hashlib.sha1(json.dumps([(d["id"], d["text"]) for d in docs]).encode()).hexdigest()[:12]
+        texts = {lang: [self.localized(d, lang) for d in docs] for lang in VEC_LANGS}
+        if use_embeddings and self.gemini.enabled:
+            try:
+                self.gemini.pick_models()
+            except Exception as e:  # noqa: BLE001
+                print("[rag] could not list Gemini models:", e)
+        version = hashlib.sha1(json.dumps([texts, self.gemini.embed_model or ""]).encode()).hexdigest()[:12]
         vectors = None
         if use_embeddings and self.gemini.enabled:
             vectors = self._load_vectors(version)
             if vectors is None:
                 try:
-                    vectors = np.array(self.gemini.embed([f"{d['title']}\n{d['text']}" for d in docs]), dtype=np.float32)
-                    vectors /= np.linalg.norm(vectors, axis=1, keepdims=True) + 1e-9
+                    flat = [t for lang in VEC_LANGS for t in texts[lang]]
+                    v = np.array(self.gemini.embed(flat), dtype=np.float32)
+                    v /= np.linalg.norm(v, axis=1, keepdims=True) + 1e-9
+                    vectors = v.reshape(len(VEC_LANGS), len(docs), -1)  # [language, doc, dim]
                     VEC_PATH.parent.mkdir(parents=True, exist_ok=True)
                     np.savez(VEC_PATH, v=vectors, version=version)
                 except Exception as e:  # noqa: BLE001
@@ -91,7 +107,7 @@ class Index:
     def _load_vectors(self, version):
         if VEC_PATH.exists():
             z = np.load(VEC_PATH)
-            if str(z["version"]) == version:
+            if str(z["version"]) == version and z["v"].ndim == 3:
                 return z["v"]
         return None
 
@@ -126,7 +142,7 @@ class Index:
             print("[rag] query embedding failed:", e)
             return []
         qv /= np.linalg.norm(qv) + 1e-9
-        sims = self.vectors @ qv
+        sims = (self.vectors @ qv).max(axis=0)  # best match over the record's three languages
         top = np.argsort(-sims)[:k]
         return [(float(sims[i]), int(i)) for i in top if sims[i] > 0.35]
 
