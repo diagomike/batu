@@ -1,0 +1,11 @@
+# secrets and local data (submissions, payments, visitor questions)
+.env
+var/
+# generated
+build/
+__pycache__/
+*.pyc
+# editor / tool settings
+.claude/
+.vscode/
+.idea/

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}{{ t("Discover Batu") }}{% endblock %}
+{% block header_mode %}over{% endblock %}
+{% block main %}
+<section class="hero">
+  {% if img("tulu-gudo-terraces", 1600) %}<img class="bg" src="{{ img('tulu-gudo-terraces', 1600) }}" alt="" fetchpriority="high">{% endif %}
+  <div class="wrap">
+    <p class="eyebrow">{{ t("Discover Batu") }}</p>
+    <h1>{{ t("Five islands, one holy lake, and pelicans at arm's length") }}</h1>
+    <p class="lede">{{ t("Batu is the closest of the great Rift Valley lakes to Addis Ababa: about 160 km, two and a half hours by road.") }}</p>
+    <nav class="chips"><a href="#places">{{ t("Places") }}</a><a href="#events">{{ t("Festivals") }}</a><a href="#day-trips">{{ t("Day trips") }}</a><a href="#stay">{{ t("Where to stay") }}</a><a href="/book">{{ t("Book a boat trip") }}</a></nav>
+  </div>
+  {% if credit("tulu-gudo-terraces") %}<span class="credit">{{ t("Photo") }}: {{ credit("tulu-gudo-terraces") }}</span>{% endif %}
+</section>
+
+<section class="section" id="places">
+  <div class="wrap">
+    <div class="sec-head"><div><p class="eyebrow">{{ t("Places and stories") }}</p><h2>{{ t("Where to go, what to know") }}</h2></div></div>
+    <div class="grid g3">
+      {% for p in d.places %}
+      <a class="pcard" href="/discover/{{ p.id }}">
+        {% if img(p.image) %}<img src="{{ img(p.image) }}" alt="" loading="lazy" style="view-transition-name:img-{{ p.id }}">{% endif %}
+        <span class="t"><span>{{ t(p.kicker) }}</span><b>{{ t(p.title) }}</b></span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section tint" id="events">
+  <div class="wrap">
+    <div class="sec-head"><div><p class="eyebrow">{{ t("Calendar") }}</p><h2>{{ t("Festivals and events") }}</h2><p>{{ t("Dates in the Ethiopian calendar first. Religious dates that depend on the moon or on the Abbaa Gadaa are approximate.") }}</p></div></div>
+    <div class="table-wrap"><table class="t">
+      <thead><tr><th>{{ t("Ethiopian date") }}</th><th>{{ t("Gregorian date") }}</th><th>{{ t("Event") }}</th><th>{{ t("Where") }}</th></tr></thead>
+      <tbody>{% for e in d.events %}<tr><td class="mono">{{ et(e.date) }}</td><td class="mono">{{ gc(e.date) }}</td><td><b>{{ t(e.title) }}</b></td><td>{{ t(e.where) }}</td></tr>{% endfor %}</tbody>
+    </table></div>
+  </div>
+</section>
+
+<section class="section" id="day-trips">
+  <div class="wrap">
+    <div class="sec-head"><div><p class="eyebrow">{{ t("Batu as your base") }}</p><h2>{{ t("Day trips") }}</h2></div></div>
+    <div class="grid g4">
+      {% for x in d.day_trips %}<div class="card"><span class="eyebrow">{{ t(x.distance) }}</span><h3>{{ t(x.title) }}</h3><p class="muted" style="font-size:.92rem">{{ t(x.text) }}</p></div>{% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section tint" id="stay">
+  <div class="wrap split">
+    <div class="min0">
+      <div class="sec-head"><div><p class="eyebrow">{{ t("Stay") }}</p><h2>{{ t("Where to stay") }}</h2></div></div>
+      <div class="rows">{% for s in d.stays %}<div class="row"><div><b>{{ t(s.name) }}</b><span>{{ t(s.where) }}{% if s.where %} · {% endif %}{{ t(s.text) }}</span></div>{% if s.sample_contact %}<span class="sample">{{ t("Contacts to confirm") }}</span>{% endif %}</div>{% endfor %}</div>
+    </div>
+    <aside class="min0" id="getting-here">
+      <div class="card"><p class="eyebrow">{{ t("Getting here") }}</p><p>{{ t(d.getting_here) }}</p></div>
+    </aside>
+  </div>
+</section>
+{% endblock %}

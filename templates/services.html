@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}{{ t("Services") }}{% endblock %}
+{% block main %}
+<header class="page-head">
+  <div class="wrap">
+    <p class="crumbs"><a href="/">{{ t("Home") }}</a> / {{ t("Services") }}</p>
+    <h1>{{ t("City services") }}</h1>
+    <p class="lede">{{ t("What to bring, what it costs, how long it takes and which office handles it. Fees and times marked Sample are placeholders until each office confirms them.") }}</p>
+    <form class="askbar" action="/services" method="get" role="search" style="box-shadow:none;border:1px solid var(--line)">
+      <label class="sr" for="sq">{{ t("Search services") }}</label>
+      <input id="sq" name="q" type="search" value="{{ q }}" placeholder="{{ t('Search services, e.g. permit, ID, water') }}">
+      <button class="btn btn-lake">{{ t("Search") }}</button>
+    </form>
+  </div>
+</header>
+
+{% if q %}
+<section class="section"><div class="wrap">
+  <p class="eyebrow" style="margin-bottom:12px">{{ items|length }} {{ t("results for") }} “{{ q }}”</p>
+  <div class="rows">
+    {% for s in items %}<a class="row" href="/services/{{ s.id }}"><div><b>{{ t(s.title) }}</b><span>{{ t(s.summary) }}</span></div><span class="go">{{ t("Open") }} →</span></a>{% endfor %}
+  </div>
+  {% if not items %}<p class="note lake" style="margin-top:16px">{{ t("No service matched. Try another word, or ask the assistant.") }} <a href="/ask?q={{ q|urlencode }}">{{ t("Ask Batu") }}</a></p>{% endif %}
+</div></section>
+{% else %}
+<section class="section" style="padding-top:28px">
+  <div class="wrap ide">
+    <aside class="explorer" aria-label="{{ t('Service categories') }}">
+      <div class="ex-head">{{ t("Explorer") }} · {{ t("Services") }}</div>
+      <ul>
+        {% for c in categories %}<li><a href="#{{ c.id }}"><span class="ic">{{ icon(c.id) }}</span><span class="nm">{{ t(c.title) }}</span><span class="ct">{{ by_cat[c.id]|length }}</span></a></li>{% endfor %}
+      </ul>
+      <div class="ex-head ex-more">{{ t("Do it online") }}</div>
+      <ul class="ex-more">
+        <li><a href="/report"><span class="nm">{{ t("Report a problem") }}</span></a></li>
+        <li><a href="/pay"><span class="nm">{{ t("Pay a fee") }}</span></a></li>
+        <li><a href="/track"><span class="nm">{{ t("Track a request") }}</span></a></li>
+      </ul>
+    </aside>
+    <div class="min0" style="display:grid;gap:56px">
+      {% for c in categories %}
+      <section id="{{ c.id }}" class="cat">
+        <div class="sec-head"><div><p class="eyebrow" data-sheet="S-0{{ loop.index }} — ">{{ by_cat[c.id]|length }} {{ t("services") }}</p><h2>{{ t(c.title) }}</h2><p>{{ t(c.summary) }}</p></div></div>
+        <div class="rows">
+          {% for s in by_cat[c.id] %}
+          <a class="row" href="/services/{{ s.id }}"><div><b>{{ t(s.title) }}</b><span>{{ t(s.summary) }}</span></div><span class="go">{% if s.online %}{{ t("Online") }} · {% endif %}{{ t("Open") }} →</span></a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ t("Make a complaint") if complaint else t("Report a problem") }}{% endblock %}
+{% block main %}
+<header class="page-head">
+  <div class="wrap">
+    <p class="crumbs"><a href="/">{{ t("Home") }}</a> / {{ t("Make a complaint") if complaint else t("Report a problem") }}</p>
+    <h1>{{ t("Make a complaint about a city service") if complaint else t("Report a problem in the city") }}</h1>
+    <p class="lede">{% if complaint %}{{ t("Complaints go to the good governance unit. You get a reference number and a response date.") }}{% else %}{{ t("Tell the city about a broken street light, a pothole, a blocked drain or a water leak. You get a tracking number.") }}{% endif %}</p>
+  </div>
+</header>
+<section class="section">
+  <div class="wrap split">
+    <form class="form min0" method="post" enctype="multipart/form-data" data-stepper data-submit-label="{{ t('Send') }}">
+      <input type="hidden" name="kind" value="{{ 'complaint' if complaint else 'report' }}">
+      {% if not complaint %}
+      <fieldset class="step">
+        <legend>{{ t("What is the problem?") }}</legend>
+        <div class="radio-cards">{% for ty in types %}<label><input type="radio" name="type" value="{{ ty }}" {% if loop.first %}checked{% endif %}> {{ t(ty) }}</label>{% endfor %}</div>
+      </fieldset>
+      <fieldset class="step">
+        <legend>{{ t("Where is it?") }}</legend>
+        <div class="field"><label for="where">{{ t("Landmark or address") }}</label><input id="where" name="where" type="text" required placeholder="{{ t('e.g. 50 m from the jetty gate, near the mosque') }}"><span class="hint">{{ t("Use a landmark people know.") }}</span></div>
+        <div class="field"><label for="kebele">{{ t("Kebele") }}</label><select id="kebele" name="kebele"><option value="">{{ t("Not sure") }}</option>{% for k in kebeles %}<option>{{ t(k.name) }}</option>{% endfor %}</select></div>
+      </fieldset>
+      <fieldset class="step">
+        <legend>{{ t("Tell us more") }}</legend>
+        <div class="field"><label for="details">{{ t("Describe the problem") }}</label><textarea id="details" name="details" required></textarea></div>
+        <div class="field"><label for="photo">{{ t("Photo (optional)") }}</label><input id="photo" name="photo" type="file" accept="image/*" capture="environment"><span class="hint">{{ t("Up to 6 MB.") }}</span></div>
+      </fieldset>
+      {% else %}
+      <fieldset class="step">
+        <legend>{{ t("Which office or service?") }}</legend>
+        <div class="field"><label for="type">{{ t("Office") }}</label><select id="type" name="type">{% for o in offices.values() %}<option>{{ t(o.name) }}</option>{% endfor %}</select></div>
+        <div class="field"><label for="kebele">{{ t("Kebele") }}</label><select id="kebele" name="kebele"><option value="">{{ t("Not sure") }}</option>{% for k in kebeles %}<option>{{ t(k.name) }}</option>{% endfor %}</select></div>
+      </fieldset>
+      <fieldset class="step">
+        <legend>{{ t("What happened?") }}</legend>
+        <div class="field"><label for="details">{{ t("Describe what happened") }}</label><textarea id="details" name="details" required></textarea></div>
+      </fieldset>
+      {% endif %}
+      <fieldset class="step">
+        <legend>{{ t("How can we reach you?") }}</legend>
+        <div class="field"><label for="phone">{{ t("Phone number (optional)") }}</label><input id="phone" name="phone" type="tel" placeholder="09…"><span class="hint">{{ t("Only to update you. You can also follow progress with the tracking number.") }}</span></div>
+      </fieldset>
+      <fieldset class="step js-only" data-review><legend>{{ t("Check your answers") }}</legend><dl class="review"></dl></fieldset>
+      <div class="nojs-submit"><button class="btn btn-accent">{{ t("Send") }}</button></div>
+    </form>
+    <aside class="aside min0">
+      <div class="note red"><b>{{ t("Danger to life?") }}</b> {{ t("Call 991 (police), 907 (ambulance) or 939 (fire) now.") }}</div>
+      <div class="card"><p class="eyebrow">{{ t("What happens next") }}</p><ol class="steps"><li><span>{{ t("You get a tracking number straight away.") }}</span></li><li><span>{{ t("The right office reviews it, usually within 3 working days.") }}</span></li><li><span>{{ t("You can see each status change on the Track page.") }}</span></li></ol></div>
+    </aside>
+  </div>
+</section>
+{% endblock %}

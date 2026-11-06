@@ -1,0 +1,28 @@
+{
+  "offices": [
+    {"id": "mayor", "name": "Office of the Mayor", "head": "Ahmedin Ismail, Mayor", "head_status": "reported June 2025, to confirm", "does": "Leads the city administration, chairs the cabinet, and owns this portal."},
+    {"id": "council", "name": "City Council", "head": "Speaker to be confirmed", "does": "Approves the city budget, plans and local rules. Meetings are public."},
+    {"id": "municipality", "name": "Municipality (City Manager)", "head": "To be confirmed", "does": "Runs municipal services: sanitation, waste, signs and advertising, abattoir, city property and street lighting."},
+    {"id": "land", "name": "Land Development and Management Office", "head": "To be confirmed", "does": "Land lease, land-use rent, site plans, title transfer and the land register."},
+    {"id": "construction", "name": "Urban Development and Construction Office", "head": "To be confirmed", "does": "Building permits, inspections, roads, drainage and the corridor development projects."},
+    {"id": "finance", "name": "Finance Office", "head": "To be confirmed", "does": "City budget, payments, receipts, procurement and tenders."},
+    {"id": "revenue", "name": "Revenue Office", "head": "To be confirmed", "does": "Taxes and municipal service charges, tax clearance certificates."},
+    {"id": "trade", "name": "Trade and Market Development Office", "head": "To be confirmed", "does": "Trade licences, market stalls, consumer protection and fair prices."},
+    {"id": "investment", "name": "Investment and Industry Office", "head": "To be confirmed", "does": "Investment land, investor support and industry development."},
+    {"id": "culture-tourism", "name": "Culture and Tourism Office", "head": "Kamaal Badhaasoo", "head_status": "named in Addis Standard, Nov 2025", "does": "Lake and island tourism, boat associations, festivals such as Timket and Irreecha, and heritage sites such as Ardaa Jilaa Qixxee Waayyuu."},
+    {"id": "youth-sports", "name": "Youth and Sports Office", "head": "To be confirmed", "does": "Sports fields, youth centres and venue bookings."},
+    {"id": "civil-registration", "name": "Civil Registration (Vital Events) Office", "head": "To be confirmed", "does": "Birth, marriage, divorce and death registration and certificates."},
+    {"id": "public-service", "name": "Public Service and Human Resource Development Office", "head": "Jeylaan Burqaa", "head_status": "named in 2022 reporting, to confirm", "does": "City jobs and vacancies, service standards, staff conduct and complaints about service."},
+    {"id": "communication", "name": "Government Communication Office", "head": "To be confirmed", "does": "News, notices, media requests and the city's social media."},
+    {"id": "education", "name": "Education Office", "head": "To be confirmed", "does": "Public kindergartens, primary and secondary schools, enrolment and exams."},
+    {"id": "health", "name": "Health Office", "head": "To be confirmed", "does": "Batu Hospital and health centres, vaccination, maternal health and community health insurance."},
+    {"id": "water", "name": "Batu Water Supply and Sewerage Service", "head": "To be confirmed", "does": "Drinking water treated from Lake Dambal, new connections, water bills and leaks."},
+    {"id": "agriculture", "name": "Agriculture and Environmental Protection Office", "head": "To be confirmed", "does": "Urban agriculture, greening, lake shore protection and fisheries support."},
+    {"id": "jobs-skills", "name": "Job Creation and Skills Office", "head": "To be confirmed", "does": "Support for micro and small enterprises, youth jobs and work spaces."},
+    {"id": "women-children", "name": "Women, Children and Social Affairs Office", "head": "To be confirmed", "does": "Support for women, children, older people and people with disabilities."},
+    {"id": "peace-security", "name": "Peace and Security Office", "head": "To be confirmed", "does": "Community safety, event permits and coordination with the police."},
+    {"id": "police", "name": "Batu City Police", "head": "To be confirmed", "does": "Policing and crime reports. In an emergency call 991."},
+    {"id": "justice", "name": "Justice Office (Public Prosecutor)", "head": "To be confirmed", "does": "Public prosecution and legal awareness."},
+    {"id": "kebele", "name": "Kebele administrations", "head": "See Find my kebele", "does": "Resident IDs, residence letters and local services close to home."}
+  ]
+}

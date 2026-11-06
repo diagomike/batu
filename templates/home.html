@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}{{ t("Home") }}{% endblock %}
+{% block header_mode %}over{% endblock %}
+{% block head %}{% if not low_data and img("lake-ziway-2017", 1600) %}<link rel="preload" as="image" imagesrcset="{{ img('lake-ziway-2017', 800) }} 800w, {{ img('lake-ziway-2017', 1600) }} 1600w" imagesizes="100vw" fetchpriority="high">{% endif %}{% endblock %}
+{% block main %}
+{% set slides = ["lake-ziway-2017", "tulu-gudo-terraces", "pelicans-on-lake-zway", "lac-zway"] %}
+<section class="imm">
+  <div class="slides" aria-hidden="true">
+    {% for s in slides %}{% if img(s, 1600) %}<img src="{{ img(s, 1600) }}" srcset="{{ img(s, 800) }} 800w, {{ img(s, 1600) }} 1600w" sizes="100vw" alt="" {% if loop.first %}class="on" fetchpriority="high"{% else %}loading="lazy"{% endif %}>{% endif %}{% endfor %}
+  </div>
+  <div class="frame" aria-hidden="true"></div>
+  <div class="wrap inner">
+    <div class="meta-row"><span>{{ t("Oromia · East Shewa · Lake Dambal") }}</span><span class="coord">7°56′N 38°43′E · 1,643 m</span></div>
+    <h1>{{ t("Batu.") }} <em>{{ t("City of the lake.") }}</em></h1>
+    <p class="lede">{{ t("Five island monasteries, Timket on the water, pelicans at the jetty, and a city administration that answers in your language.") }}</p>
+    <div class="scalebar" aria-hidden="true"><i></i><span>0 · 5 · 10 km — {{ t("Lake Dambal, 440 km²") }}</span></div>
+    <div class="strip">
+      <div class="tabs" aria-hidden="true"><span class="on">{{ t("ask-batu") }}</span><span>{{ t("services") }}</span><span class="mono" style="margin-left:auto;border-right:0;border-left:1px solid var(--rule)">Ctrl K</span></div>
+      <form action="/ask" method="get" role="search">
+        <span class="prompt">&gt;</span>
+        <label class="sr" for="heroq">{{ t("Ask a question") }}</label>
+        <input id="heroq" name="q" type="text" placeholder="{{ t('What do you need? e.g. building permit') }}" autocomplete="off">
+        <button class="btn btn-lake btn-sm">{{ t("Ask") }}</button>
+      </form>
+      <nav class="quick" aria-label="{{ t('Popular tasks') }}">
+        <a href="/services">{{ icon("living") }}{{ t("Services") }}<span class="k">01</span></a>
+        <a href="/pay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"><rect x="3" y="6" width="18" height="13"/><path d="M3 10h18M7 15h4"/></svg>{{ t("Pay a fee") }}<span class="k">02</span></a>
+        <a href="/report"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" stroke-linejoin="miter"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>{{ t("Report") }}<span class="k">03</span></a>
+        <a href="/book">{{ icon("visiting") }}{{ t("Book a boat") }}<span class="k">04</span></a>
+      </nav>
+    </div>
+    {% if credit(slides[0]) %}<span class="caption">FIG. 00 — {{ t("Photos") }}: Wikimedia Commons ({{ credit(slides[0]) }} {{ t("and others") }})</span>{% endif %}
+  </div>
+</section>
+
+<section class="today" aria-label="{{ t('Today in Batu') }}">
+  <div class="wrap">
+    <div class="date"><b>{{ t("Today in Batu") }}</b>{{ today_et }} · {{ today_gc }}</div>
+    <ul>
+      {% for n in notices %}<li><span class="tag reed">{{ t(n.category) }}</span><a href="/news#notices">{{ t(n.title) }}</a>{% if n.sample %}<span class="sample">{{ t("Sample") }}</span>{% endif %}</li>{% endfor %}
+    </ul>
+  </div>
+</section>
+
+{% for p in places %}
+<section id="story-{{ loop.index }}" class="story-panel cropped {{ 'right' if loop.index is even }}">
+  {% if img(p.image, 1600) %}<img src="{{ img(p.image, 1600) }}" srcset="{{ img(p.image, 800) }} 800w, {{ img(p.image, 1600) }} 1600w" sizes="100vw" alt="{{ t(p.title) }}" loading="lazy" data-parallax style="view-transition-name:img-{{ p.id }}">{% endif %}
+  <div class="wrap">
+    <div class="copy">
+      <span class="n"><span>FIG. {{ "%02d"|format(loop.index) }} — {{ t(p.kicker) }}</span><span>{{ "%.3f"|format(p.coords[0]) }}°N {{ "%.3f"|format(p.coords[1]) }}°E</span></span>
+      <h2>{{ t(p.title) }}</h2>
+      <p>{{ t(p.summary) }}</p>
+      <div class="facts">{% for f in p.facts[:3] %}<span>{{ t(f) }}</span>{% endfor %}</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
+        <a class="btn btn-accent" href="/discover/{{ p.id }}">{{ t("Read the story") }}</a>
+        {% if p.id in ["tulu-gudo", "birds"] %}<a class="btn btn-light" href="/book?trip={{ 'tulu-gudo' if p.id == 'tulu-gudo' else 'birds' }}">{{ t("Book a boat trip") }}</a>{% endif %}
+      </div>
+    </div>
+  </div>
+  {% if credit(p.image) %}<span class="credit">{{ credit(p.image) }}</span>{% endif %}
+</section>
+{% endfor %}
+
+<section class="section" id="services">
+  <div class="wrap">
+    <div class="sec-head">
+      <div><p class="eyebrow" data-sheet="SHEET A-01 — ">{{ t("City services") }}</p><h2>{{ t("Everything the city does, one tap away") }}</h2><p>{{ t("What to bring, what it costs, how long it takes. Apply, pay and track online.") }}</p></div>
+      <form class="searchbar" action="/services" method="get" role="search" style="flex:1;min-width:min(100%,320px)"><label class="sr" for="sq">{{ t("Search services") }}</label><input id="sq" name="q" type="search" placeholder="{{ t('Search: ID, permit, water…') }}"><button class="btn btn-lake btn-sm">{{ t("Search") }}</button></form>
+    </div>
+    <div class="events-grid">
+      {% for c in categories %}<a href="/services#{{ c.id }}">{{ icon(c.id) }}<b>{{ t(c.title) }}</b><span>{{ t(c.summary) }}</span><em>{{ counts[c.id] }} {{ t("services") }} →</em></a>{% endfor %}
+    </div>
+    <div class="chips" style="margin-top:22px">
+      {% for s in top %}<a href="/services/{{ s.id }}">{{ t(s.title) }}</a>{% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section tint" id="explore">
+  <div class="wrap">
+    <div class="sec-head"><div><p class="eyebrow" data-sheet="SHEET A-02 — ">{{ t("Discover Batu") }}</p><h2>{{ t("More to explore") }}</h2></div><a class="btn btn-ghost" href="/discover">{{ t("All places") }}</a></div>
+  </div>
+  <div class="wrap" style="padding-right:0">
+    <div class="rail">
+      {% for p in all_places %}<a class="pcard" href="/discover/{{ p.id }}"><span class="no">PL. {{ "%02d"|format(loop.index + 3) }}</span>{% if img(p.image) %}<img src="{{ img(p.image) }}" alt="" loading="lazy">{% endif %}<span class="t"><span>{{ t(p.kicker) }}</span><b>{{ t(p.title) }}</b></span></a>{% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="stat-band section" id="numbers">
+  {% if img("zway-nasa", 1600) %}<img src="{{ img('zway-nasa', 1600) }}" alt="" loading="lazy">{% endif %}
+  <div class="wrap">
+    <div class="sec-head"><div><p class="eyebrow" data-sheet="SHEET A-03 — " style="color:var(--gold)">{{ t("Batu in numbers") }}</p><h2>{{ t("A lake city, measured") }}</h2></div></div>
+    <div class="stats">{% for n in site.numbers %}<div class="stat"><b class="num">{{ n.value }}</b><span>{{ t(n.label) }}</span><small>{{ n.source }}</small></div>{% endfor %}</div>
+  </div>
+</section>
+
+<section class="section" id="news">
+  <div class="wrap">
+    <div class="sec-head"><div><p class="eyebrow" data-sheet="SHEET A-04 — ">{{ t("News") }}</p><h2>{{ t("Latest from Batu") }}</h2></div><a class="btn btn-ghost" href="/news">{{ t("All news") }}</a></div>
+    <div class="news-cards">
+      {% for n in news %}<a class="ncard" href="/news/{{ n.id }}"><div class="ph">{% if n.image and img(n.image) %}<img src="{{ img(n.image) }}" alt="" loading="lazy">{% endif %}</div><div class="b"><span class="d">{{ et(n.date) }} · {{ t(n.category) }}</span><h3>{{ t(n.title) }}</h3><p>{{ t(n.summary) }}</p></div></a>{% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section dark" id="mayor">
+  <div class="wrap split">
+    <div class="quote min0">
+      <p class="eyebrow" style="color:var(--gold)">{{ t("From the Mayor") }}</p>
+      <blockquote>“{{ t(site.mayor.message) }}”</blockquote>
+      <div class="who"><span class="avatar">AI</span><div><b>{{ site.mayor.name }}</b><br><span class="muted" style="font-size:.88rem">{{ t(site.mayor.title) }}{% if site.mayor.message_sample %} · <span class="sample">{{ t("Draft") }}</span>{% endif %}</span></div></div>
+    </div>
+    <div class="min0" style="display:grid;gap:18px">
+      <p class="eyebrow" style="color:var(--gold)">{{ t("Mayor's commitments") }}</p>
+      <div class="prog">
+        {% for p in projects %}<div class="p"><div><span>{{ t(p.title) }}</span><span class="num">{{ p.progress }}%</span></div><div class="bar"><i class="{{ 'sample' if p.progress_sample }}" style="width:{{ p.progress }}%"></i></div></div>{% endfor %}
+      </div>
+      <p class="muted" style="font-size:.84rem">{{ t("Striped bars are sample progress until the Construction Office confirms them.") }}</p>
+      <a class="btn btn-light" href="/government#projects" style="justify-self:start">{{ t("All projects") }}</a>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap split">
+    <div class="min0">
+      <div class="sec-head"><div><p class="eyebrow" data-sheet="SHEET A-05 — ">{{ t("Coming up") }}</p><h2>{{ t("Festivals on the lake") }}</h2></div></div>
+      <div class="rows">
+        {% for e in events %}{% set d = e.date %}<div class="evt"><div class="dd"><b>{{ d[8:10]|int }}</b><span>{{ gc(d).split(" ")[1] }}</span></div><div><h3>{{ t(e.title) }}</h3><p>{{ et(d) }} · {{ t(e.where) }}</p></div></div>{% endfor %}
+      </div>
+    </div>
+    <aside class="min0" style="display:grid;gap:14px;align-content:start">
+      <p class="eyebrow">{{ t("Open calls") }}</p>
+      {% for tn in tenders if tn.status == "Open" %}<a class="row" href="/news#tenders"><div><b>{{ t(tn.title) }}</b><span>{{ t("Tender") }} · {{ t("Deadline") }} {{ gc(tn.deadline) }} {% if tn.sample %}<span class="sample">{{ t("Sample") }}</span>{% endif %}</span></div></a>{% endfor %}
+      {% for v in vacancies %}<a class="row" href="/news#vacancies"><div><b>{{ t(v.title) }}</b><span>{{ t("Job") }} · {{ t("Apply by") }} {{ gc(v.deadline) }} <span class="sample">{{ t("Sample") }}</span></span></div></a>{% endfor %}
+      <div class="card lake" style="margin-top:8px">
+        <p class="eyebrow">{{ t("My kebele") }}</p>
+        <h3>{{ t("Find your kebele office") }}</h3>
+        <form action="/kebele" method="get" style="display:flex;gap:6px"><label class="sr" for="lm">{{ t("Landmark") }}</label><input id="lm" name="q" type="search" placeholder="{{ t('e.g. jetty, OSU') }}"><button class="btn btn-accent btn-sm">{{ t("Find") }}</button></form>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<section class="visit-band cropped" id="visit">
+  {% if img("pelican-flight", 1600) %}<img src="{{ img('pelican-flight', 1600) }}" alt="" loading="lazy" data-parallax>{% endif %}
+  <div class="inner">
+    <p class="eyebrow" style="color:var(--gold)">{{ t("Plan your visit") }}</p>
+    <h2>{{ t("Two and a half hours from Addis Ababa.") }}</h2>
+    <p>{{ t("Take a boat to Tulu Gudo, eat fish tibs at the jetty, and watch the sun set over the Rift.") }}</p>
+    <div class="actions"><a class="btn btn-accent" href="/book">{{ t("Book a boat trip") }}</a><a class="btn btn-light" href="/discover#day-trips">{{ t("Day trips and stays") }}</a></div>
+  </div>
+</section>
+{% endblock %}

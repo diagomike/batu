@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{{ t("How the assistant works") }}{% endblock %}
+{% block main %}
+<header class="page-head">
+  <div class="wrap">
+    <p class="crumbs"><a href="/ask">{{ t("Ask Batu") }}</a> / {{ t("How it works") }}</p>
+    <h1>{{ t("How Ask Batu works") }}</h1>
+    <p class="lede">{{ t("A public description of the city's AI assistant: what it uses, what it may not do, and how answers are checked.") }}</p>
+  </div>
+</header>
+<section class="section">
+  <div class="wrap split">
+    <div class="prose min0">
+      <h2 style="font-size:1.4rem">{{ t("What it answers from") }}</h2>
+      <p>{{ t("Only the city's own published pages: services, offices, kebeles, notices, news, tenders and visitor information. It has") }} {{ docs }} {{ t("documents in its index right now.") }}</p>
+      <h2 style="font-size:1.4rem">{{ t("How an answer is made") }}</h2>
+      <ol class="steps">
+        <li><span>{{ t("Emergency words show the emergency numbers straight away, without any AI.") }}</span></li>
+        <li><span>{{ t("Questions about politics, law or medicine are politely redirected.") }}</span></li>
+        <li><span>{{ t("The question is matched against the city's pages using keyword search in three languages, and meaning-based search when the AI service is on.") }}</span></li>
+        <li><span>{{ t("The AI writes a short answer using only the matched pages, and lists them as sources. If the pages do not answer the question, it says so.") }}</span></li>
+        <li><span>{{ t("If the AI service is unavailable, the assistant quotes the matching city record directly.") }}</span></li>
+      </ol>
+      <h2 style="font-size:1.4rem">{{ t("What it will not do") }}</h2>
+      <ul class="checklist"><li><span>{{ t("Give legal, medical or political advice") }}</span></li><li><span>{{ t("Take payments or ask for ID or phone numbers") }}</span></li><li><span>{{ t("Answer from outside the city's pages") }}</span></li></ul>
+      <h2 style="font-size:1.4rem">{{ t("Model and data") }}</h2>
+      <p>{{ t("Demo build: answers are written by Google's Gemini model on the free tier, and search uses Gemini embeddings. Google may use free-tier inputs to improve its products, so the demo must not receive personal data. The model can be replaced without changing the website.") }}</p>
+      <p class="mono" style="font-size:.8rem">{{ t("Status") }}: {{ t("AI on") if gemini_on else t("AI off: keyword answers only") }}{% if model %} · {{ model }}{% endif %}</p>
+    </div>
+    <aside class="aside min0">
+      <div class="card"><p class="eyebrow">{{ t("Recent questions") }}</p>
+        {% for a in asks %}<p style="font-size:.86rem;border-bottom:1px solid var(--line);padding-bottom:6px">{{ a.question }}<br><span class="mono muted" style="font-size:.7rem">{{ a.lang }} · {{ a.mode }} · {{ a.ms }} ms</span></p>{% else %}<p class="muted">{{ t("No questions yet.") }}</p>{% endfor %}
+      </div>
+      <a class="btn btn-accent" href="/ask">{{ t("Ask a question") }}</a>
+    </aside>
+  </div>
+</section>
+{% endblock %}

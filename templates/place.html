@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{{ t(p.title) }}{% endblock %}
+{% block desc %}{{ t(p.summary) }}{% endblock %}
+{% block header_mode %}over{% endblock %}
+{% block main %}
+<section class="hero">
+  {% if img(p.image, 1600) %}<img class="bg" style="view-transition-name:img-{{ p.id }}" src="{{ img(p.image, 1600) }}" srcset="{{ img(p.image, 800) }} 800w, {{ img(p.image, 1600) }} 1600w" sizes="100vw" alt="{{ t(p.title) }}" fetchpriority="high">{% endif %}
+  <div class="wrap">
+    <p class="crumbs" style="color:#C9D6E1"><a href="/discover" style="color:inherit">{{ t("Discover Batu") }}</a> / {{ t(p.title) }}</p>
+    <p class="eyebrow">{{ t(p.kicker) }}</p>
+    <h1>{{ t(p.title) }}</h1>
+    <p class="lede">{{ t(p.summary) }}</p>
+  </div>
+  {% if credit(p.image) %}<span class="credit">{{ t("Photo") }}: {{ credit(p.image) }}</span>{% endif %}
+</section>
+<section class="section">
+  <div class="wrap split">
+    <article class="prose min0">{{ nl2p(p.body) }}</article>
+    <aside class="aside min0">
+      <div class="card"><p class="eyebrow">{{ t("At a glance") }}</p><ul class="factlist">{% for f in p.facts %}<li>{{ t(f) }}</li>{% endfor %}</ul></div>
+      {% if p.id in ["tulu-gudo", "birds", "islands", "lake-dambal"] %}<a class="btn btn-accent" href="/book?trip={{ 'tulu-gudo' if p.id == 'tulu-gudo' else ('gelila' if p.id == 'islands' else 'birds') }}">{{ t("Book a boat trip") }}</a>{% endif %}
+      <div><p class="eyebrow" style="margin-bottom:6px">{{ t("Sources") }}</p><ul class="factlist">{% for s in p.sources %}<li class="muted">{{ s }}</li>{% endfor %}</ul></div>
+    </aside>
+  </div>
+</section>
+<section class="section tint">
+  <div class="wrap">
+    <div class="sec-head"><div><p class="eyebrow">{{ t("More to discover") }}</p></div></div>
+    <div class="grid g3">{% for o in others %}<a class="pcard" href="/discover/{{ o.id }}">{% if img(o.image) %}<img src="{{ img(o.image) }}" alt="" loading="lazy">{% endif %}<span class="t"><span>{{ t(o.kicker) }}</span><b>{{ t(o.title) }}</b></span></a>{% endfor %}</div>
+  </div>
+</section>
+{% endblock %}

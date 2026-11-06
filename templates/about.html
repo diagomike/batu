@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ t("About Batu") }}{% endblock %}
+{% block main %}
+<header class="page-head">
+  <div class="wrap">
+    <p class="crumbs"><a href="/">{{ t("Home") }}</a> / {{ t("About Batu") }}</p>
+    <h1>{{ t("About Batu") }}</h1>
+    <p class="lede">{{ t("Facts about the city, with where each one comes from.") }}</p>
+  </div>
+</header>
+<section class="section">
+  <div class="wrap split">
+    <div class="min0" style="display:grid;gap:22px">
+      {% for f in site.facts %}<div class="prose"><h2 style="font-size:1.3rem">{{ t(f.q) }}</h2><p>{{ t(f.a) }}</p></div>{% endfor %}
+    </div>
+    <aside class="aside min0">
+      {% if img("zway-nasa") %}<figure style="margin:0"><img src="{{ img('zway-nasa') }}" alt="{{ t('Lake Dambal seen from space') }}"><figcaption>{{ t("Lake Dambal seen from space") }} · {{ credit("zway-nasa") }}</figcaption></figure>{% endif %}
+      <div class="stats" style="grid-template-columns:1fr 1fr">{% for n in site.numbers[:4] %}<div class="stat"><b class="num" style="font-size:1.4rem">{{ n.value }}</b><span>{{ t(n.label) }}</span></div>{% endfor %}</div>
+    </aside>
+  </div>
+</section>
+<section class="section tint" id="data">
+  <div class="wrap prose">
+    <p class="eyebrow">{{ t("Data protection") }}</p>
+    <h2>{{ t("How this portal handles your information") }}</h2>
+    <p>{{ t("The portal collects only what a request needs: usually your name, a phone number and the details of the request. It is used only to handle your request.") }}</p>
+    <p>{{ t("Questions to the assistant are stored without phone or ID numbers, so the city can improve answers. Do not type personal numbers into the assistant.") }}</p>
+    <p>{{ t("Personal data is handled under Ethiopia's Personal Data Protection Proclamation No. 1321/2024.") }}</p>
+  </div>
+</section>
+<section class="section" id="credits">
+  <div class="wrap">
+    <div class="sec-head"><div><p class="eyebrow">{{ t("Photo credits") }}</p><h2>{{ t("Who took these photos") }}</h2><p>{{ t("Most photos come from Wikimedia Commons under Creative Commons licences. Photos marked as reference are placeholders until the city provides its own.") }}</p></div></div>
+    {% set m = credit %}
+    <div class="table-wrap"><table class="t"><thead><tr><th>{{ t("Photo") }}</th><th>{{ t("Credit") }}</th><th>{{ t("Licence") }}</th><th>{{ t("Source") }}</th></tr></thead><tbody>
+      {% for slug, info in media_items %}<tr><td>{{ t(info.caption) }}</td><td>{{ info.credit }}</td><td>{% if info.licence_url %}<a href="{{ info.licence_url }}" target="_blank" rel="noopener">{{ info.licence }}</a>{% else %}{{ t(info.licence) }}{% endif %}</td><td>{% if info.source %}<a href="{{ info.source }}" target="_blank" rel="noopener">Commons ↗</a>{% endif %}</td></tr>{% endfor %}
+    </tbody></table></div>
+  </div>
+</section>
+{% endblock %}

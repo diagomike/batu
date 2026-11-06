@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ t("Checkout") }}{% endblock %}
+{% block main %}
+<section class="section">
+  <div class="wrap">
+    <div class="checkout">
+      <header><b>telebirr</b><span class="mono" style="font-size:.75rem">{{ t("DEMO · no money moves") }}</span></header>
+      <div class="body">
+        <span class="muted">{{ t("Pay to") }}: {{ t("Batu City Administration") }}</span>
+        <span>{{ t(r.title) }}</span>
+        <span class="amt num">{{ money(p.amount) }}</span>
+        <span class="mono muted" style="font-size:.78rem">{{ t("Payment") }} {{ p.id }} · {{ t("Reference") }} {{ r.ref }}</span>
+        <form method="post" style="display:grid;gap:10px" data-checkout>
+          <input type="hidden" name="result" value="success">
+          <button class="btn" style="background:#0B6E4F;color:#fff">{{ t("Confirm payment") }}</button>
+        </form>
+        <form method="post"><input type="hidden" name="result" value="cancel"><button class="btn btn-ghost" style="width:100%">{{ t("Cancel") }}</button></form>
+        <p class="muted" style="font-size:.78rem">{{ t("This screen stands in for the Telebirr checkout. The real integration plugs into app/payments.py.") }}</p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

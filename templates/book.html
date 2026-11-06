@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}{{ t("Book a boat trip") }}{% endblock %}
+{% block main %}
+<header class="page-head">
+  <div class="wrap">
+    <p class="crumbs"><a href="/discover">{{ t("Discover Batu") }}</a> / {{ t("Book") }}</p>
+    <h1>{{ t("Book a boat trip or a venue") }}</h1>
+    <p class="lede">{{ t("Trips run with the licensed Hara Dembel Boat Owners Association and the Tulu Gudo Tourism Cooperative. Pay online and show your ticket code at the jetty.") }}</p>
+  </div>
+</header>
+<section class="section">
+  <div class="wrap split">
+    <form class="form min0" method="post" data-stepper data-submit-label="{{ t('Continue to payment') }}">
+      <fieldset class="step"><legend>{{ t("Choose a trip") }}</legend>
+        <div class="radio-cards">{% for k, v in trips.items() %}<label><input type="radio" name="trip" value="{{ k }}" {% if k == trip %}checked{% endif %}><span><b>{{ t(v.title) }}</b><br><span class="muted">{{ "{:,}".format(v.price) }} birr</span> <span class="sample">{{ t("Sample price") }}</span></span></label>{% endfor %}</div>
+      </fieldset>
+      <fieldset class="step"><legend>{{ t("When?") }}</legend>
+        <div class="field"><label for="date">{{ t("Date") }}</label><input id="date" name="date" type="date" min="{{ today.isoformat() }}" required></div>
+        <div class="field"><label for="people">{{ t("Number of people") }}</label><input id="people" name="people" type="number" min="1" max="40" value="2"></div>
+      </fieldset>
+      <fieldset class="step"><legend>{{ t("Who is booking?") }}</legend>
+        <div class="field"><label for="name">{{ t("Name for the booking") }}</label><input id="name" name="name" type="text" required autocomplete="name"></div>
+        <div class="field"><label for="phone">{{ t("Phone number") }}</label><input id="phone" name="phone" type="tel" placeholder="09…" autocomplete="tel"></div>
+      </fieldset>
+      <fieldset class="step js-only" data-review><legend>{{ t("Check your answers") }}</legend><dl class="review"></dl></fieldset>
+      <div class="nojs-submit"><button class="btn btn-accent">{{ t("Continue to payment") }}</button></div>
+    </form>
+    <aside class="aside min0">
+      {% if img("pelicans-on-lake-zway") %}<figure style="margin:0"><img src="{{ img('pelicans-on-lake-zway') }}" alt="{{ t('Great white pelicans at Batu') }}" style="border-radius:3px"><figcaption>{{ credit("pelicans-on-lake-zway") }}</figcaption></figure>{% endif %}
+      <div class="note">{{ t("Life jackets are provided on every boat. Trips may be cancelled in strong afternoon wind; you can rebook for free.") }}</div>
+    </aside>
+  </div>
+</section>
+{% endblock %}

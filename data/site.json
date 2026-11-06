@@ -1,0 +1,56 @@
+{
+  "city": {
+    "name": "Batu",
+    "name_om": "Magaalaa Baatuu",
+    "name_am": "ባቱ ከተማ",
+    "former_name": "Ziway (Zway)",
+    "region": "Oromia",
+    "zone": "East Shewa",
+    "domain": "batu.gov.et",
+    "coords": [7.9333, 38.7167],
+    "jetty": [7.9254, 38.724]
+  },
+  "placeholder_note": "Items marked Sample are placeholders until the city office confirms them.",
+  "emergency": [
+    {"id": "police", "label": "Police", "number": "991", "note": "National short code"},
+    {"id": "ambulance", "label": "Ambulance", "number": "907", "note": "National short code"},
+    {"id": "fire", "label": "Fire and rescue", "number": "939", "note": "National short code"}
+  ],
+  "local_emergency": [
+    {"label": "Batu Police Station", "number": "To be confirmed", "sample": true},
+    {"label": "Batu Hospital", "number": "To be confirmed", "sample": true},
+    {"label": "Batu Water Supply and Sewerage Service", "number": "To be confirmed", "sample": true},
+    {"label": "Ethiopian Electric Utility, Batu district", "number": "To be confirmed", "sample": true}
+  ],
+  "hours": "Monday to Friday, 8:30 to 12:30 and 13:30 to 17:30. Saturday morning for selected services.",
+  "hours_sample": true,
+  "mayor": {
+    "name": "Ahmedin Ismail",
+    "title": "Mayor of Batu City Administration",
+    "status": "Named as mayor in June 2025 reporting; to be confirmed by the Mayor's Office.",
+    "message": "Batu is a city of the lake. Our fishermen feed the region, our farms and vineyards reach the world, and every January the whole country watches Timket on Hora Dambal. This portal is how the city administration will serve you: clear services, honest numbers, and answers in your language. Tell us where we fall short, and watch us fix it.",
+    "message_sample": true
+  },
+  "numbers": [
+    {"value": "440 km²", "label": "Area of Lake Dambal (Hora Dambal)", "source": "Wikipedia, IWMI"},
+    {"value": "5", "label": "Islands, each with a monastery", "source": "Encyclopaedia Aethiopica"},
+    {"value": "1,643 m", "label": "Elevation of the city", "source": "Wikipedia"},
+    {"value": "160 km", "label": "From Addis Ababa, about 2.5 hours by road", "source": "Wikivoyage"},
+    {"value": "1.1B+ birr", "label": "Tourism income, fiscal 2024/25 (reported)", "source": "Mayor, via Travel And Tour World, June 2025"},
+    {"value": "2,454 t", "label": "Fish landed from the lake each year", "source": "Ethiopian Department of Fisheries"},
+    {"value": "43,660", "label": "Residents at the 2007 census; current figure to be confirmed", "source": "CSA 2007"},
+    {"value": "7", "label": "Kebeles after the 2023 merger with Adami Tullu (announced)", "source": "Addis Standard, Feb 2023"}
+  ],
+  "facts": [
+    {"q": "Where is Batu?", "a": "Batu is a city in the East Shewa Zone of Oromia, Ethiopia, on the western shore of Lake Dambal (also called Lake Ziway or Hora Dambal). It lies about 160 km south of Addis Ababa on the main road to Hawassa and Moyale, at 1,643 m above sea level."},
+    {"q": "What was Batu called before?", "a": "Batu was formerly known as Ziway or Zway. The lake is also known as Lake Ziway, Lake Batu, Hora Dambal or Dembel."},
+    {"q": "How big is Lake Dambal?", "a": "Lake Dambal covers about 440 square kilometres. It is 31 km long and 20 km wide, with a maximum depth of about 9 m. It is fed by the Meki and Katar rivers and drains through the Bulbula river into Lake Abijatta."},
+    {"q": "What is the climate in Batu?", "a": "Batu has a mild climate with a mean temperature of about 19 °C. Daytime highs are 25 to 28 °C. Rainfall is about 775 mm a year, with the wettest month in July and the driest in November."},
+    {"q": "How many people live in Batu?", "a": "The 2007 census counted 43,660 residents. A 2017 government estimate was 70,436 and a 2022 projection was 90,522. The city will publish its confirmed current figure."},
+    {"q": "How many kebeles does Batu have?", "a": "In February 2023 the Oromia regional government announced that Batu and Adami Tullu would be merged and organised into 7 kebeles. Use the Find my kebele page to see the kebele list; names and boundaries are being confirmed by the city."},
+    {"q": "Who is the mayor of Batu?", "a": "Ahmedin Ismail was reported as Mayor of Batu City Administration in June 2025. The Mayor's Office will confirm the current leadership on the City government page."},
+    {"q": "What are the emergency numbers?", "a": "In an emergency call 991 for police, 907 for an ambulance, and 939 for fire and rescue. These are national short codes that work from any phone."},
+    {"q": "When are city offices open?", "a": "City offices are open Monday to Friday, 8:30 to 12:30 and 13:30 to 17:30, with selected services on Saturday morning. Check each office page for its own hours. These hours are a sample until confirmed."},
+    {"q": "What languages does the portal use?", "a": "The portal is in Afaan Oromoo, Amharic and English. Afaan Oromoo and Amharic text is currently machine translated with Google Translate and is being reviewed by city staff."}
+  ]
+}

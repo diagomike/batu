@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}{{ t("Staff") }}{% endblock %}
+{% block main %}
+<section class="section"><div class="wrap" style="max-width:520px">
+  <h1 style="font-size:2rem;margin-bottom:14px">{{ t("Staff sign-in") }}</h1>
+  <form class="form" method="get" action="/admin">
+    <div class="field"><label for="token">{{ t("Admin token") }}</label><input id="token" name="token" type="password" required><span class="hint">{{ t("Set ADMIN_TOKEN in the .env file.") }}</span></div>
+    <div><button class="btn btn-lake">{{ t("Open") }}</button></div>
+  </form>
+</div></section>
+{% endblock %}

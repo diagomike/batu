@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ t("Ask Batu") }}{% endblock %}
+{% block main %}
+<header class="page-head">
+  <div class="wrap">
+    <p class="eyebrow">{{ t("Assistant") }}</p>
+    <h1>{{ t("Ask Batu") }}</h1>
+    <p class="lede">{{ t("Ask in Afaan Oromoo, Amharic or English. Answers come only from the city's pages, with sources.") }} <a href="/assistant">{{ t("How it works") }}</a></p>
+  </div>
+</header>
+<section class="section" style="padding-top:28px">
+  <div class="wrap" style="max-width:820px">
+    <div class="suggest" id="suggest">
+      {% for s in ["What do I need for a building permit?", "How much is a boat trip to Tulu Gudo?", "When is Timket in Batu?", "Which kebele is near the jetty?", "Hayyama ijaarsaaf maal barbaachisa?", "የንግድ ፈቃድ እንዴት አገኛለሁ?", "Who is the mayor of Batu?", "How do I pay land lease?"] %}
+      <button type="button" data-q="{{ s }}">{{ s }}</button>
+      {% endfor %}
+    </div>
+    <div class="chat" id="chatlog" style="margin-top:22px" aria-live="polite"></div>
+    <form class="ask-form" id="chatform">
+      <label class="sr" for="chatq">{{ t("Your question") }}</label>
+      <input id="chatq" type="text" autocomplete="off" value="{{ q }}" placeholder="{{ t('Type your question') }}">
+      <button class="btn btn-accent">{{ t("Ask") }}</button>
+    </form>
+    <p class="muted" style="font-size:.8rem">{{ t("For emergencies call 991, 907 or 939. Do not share ID or phone numbers here.") }}</p>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}<script>window.ASK_AUTO={{ "true" if q else "false" }};</script>{% endblock %}

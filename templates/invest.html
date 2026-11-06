@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}{{ t("Invest in Batu") }}{% endblock %}
+{% block header_mode %}over{% endblock %}
+{% block main %}
+<section class="hero">
+  {% if img("landscape-ne-ziway", 1600) %}<img class="bg" src="{{ img('landscape-ne-ziway', 1600) }}" alt="" fetchpriority="high">{% endif %}
+  <div class="wrap">
+    <p class="eyebrow">{{ t("Invest") }}</p>
+    <h1>{{ t("Invest where the Rift Valley meets the market") }}</h1>
+    <p class="lede">{{ t("Two and a half hours from Addis Ababa on the road to Kenya, with fresh water, fertile land and a fast-growing visitor economy.") }}</p>
+    <nav class="chips"><a href="#sectors">{{ t("Sectors") }}</a><a href="#steps">{{ t("How to invest") }}</a><a href="/news#tenders">{{ t("Tenders") }}</a></nav>
+  </div>
+  {% if credit("landscape-ne-ziway") %}<span class="credit">{{ t("Photo") }}: {{ credit("landscape-ne-ziway") }}</span>{% endif %}
+</section>
+<section class="section" id="sectors">
+  <div class="wrap">
+    <div class="sec-head"><div><p class="eyebrow">{{ t("Why Batu") }}</p><h2>{{ t("Sectors with a track record") }}</h2></div></div>
+    <div class="grid g3">
+      <div class="card"><h3>{{ t("Tourism and hospitality") }}</h3><p class="muted">{{ t("Tourism income passed 1.1 billion birr in fiscal 2024/25, as reported by the mayor. The city has offered 17.1 ha of lakeside land for lodges.") }}</p></div>
+      <div class="card"><h3>{{ t("Horticulture and flowers") }}</h3><p class="muted">{{ t("Sher's rose farm by the lake was described in 2019 as the world's largest, with 1,500 workers. Vegetables and fruit from Batu supply markets across the country.") }}</p></div>
+      <div class="card"><h3>{{ t("Wine and agro-processing") }}</h3><p class="muted">{{ t("Castel planted Ethiopia's first private vineyard here in 2007 and bottled 1.2 million bottles in its first full season.") }}</p></div>
+      <div class="card"><h3>{{ t("Fish and aquaculture") }}</h3><p class="muted">{{ t("About 2,450 tonnes of fish are landed from Lake Dambal each year, supplying Addis Ababa and Adama.") }}</p></div>
+      <div class="card"><h3>{{ t("Education and skills") }}</h3><p class="muted">{{ t("Oromia State University (founded 2009) and Batu TVET College train a young workforce in the city.") }}</p></div>
+      <div class="card"><h3>{{ t("Logistics") }}</h3><p class="muted">{{ t("On the Modjo–Hawassa corridor of the Trans-African Highway to Kenya, with the expressway to Addis Ababa and the Modjo dry port to the north.") }}</p></div>
+    </div>
+  </div>
+</section>
+<section class="section tint" id="steps">
+  <div class="wrap split">
+    <div class="min0">
+      <div class="sec-head"><div><p class="eyebrow">{{ t("How to invest") }}</p><h2>{{ t("From proposal to land") }}</h2></div></div>
+      <ol class="steps">
+        <li><span>{{ t("Talk to the Investment and Industry Office about available plots and incentives.") }}</span></li>
+        <li><span>{{ t("Get an investment licence and register your company.") }}</span></li>
+        <li><span>{{ t("Submit a project proposal with a feasibility study and proof of finance.") }}</span></li>
+        <li><span>{{ t("The investment committee reviews the proposal.") }}</span></li>
+        <li><span>{{ t("Sign the land lease and start work within the agreed time; land not developed on time is taken back.") }}</span></li>
+      </ol>
+      <p class="note" style="margin-top:20px"><span class="sample">{{ t("Sample") }}</span> {{ t("Steps are a summary until the Investment Office publishes its official procedure.") }}</p>
+    </div>
+    <aside class="aside min0">
+      <div class="card"><p class="eyebrow">{{ t("Service") }}</p><h3>{{ t("Apply for investment land") }}</h3><a class="btn btn-accent" href="/services/investment-land">{{ t("See requirements") }}</a></div>
+      <div class="card"><p class="eyebrow">{{ t("Projects") }}</p>{% for p in projects %}{% if p.kind in ["Investment","Highway"] %}<p><b>{{ t(p.title) }}</b><br><span class="muted">{{ t(p.status) }}</span></p>{% endif %}{% endfor %}</div>
+    </aside>
+  </div>
+</section>
+{% endblock %}

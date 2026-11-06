@@ -1,0 +1,145 @@
+{
+  "places": [
+    {
+      "id": "lake-dambal",
+      "kind": "nature",
+      "title": "Lake Dambal",
+      "kicker": "The lake that made the city",
+      "image": "lake-ziway-2017",
+      "summary": "A shallow freshwater lake of 440 km², fed by the Meki and Katar rivers and drained by the Bulbula. Five volcanic islands, hippos, and one of the richest bird shores in the Rift Valley.",
+      "body": "Lake Dambal, also called Lake Ziway or Hora Dambal, is the northernmost of the large Rift Valley lakes. It is 31 km long and 20 km wide but only about 9 m deep at its deepest. Batu sits on its western shore. The lake gives the city its drinking water, its fish and much of its tourism.\n\nIn the last Ice Age, Ziway, Abijatta, Shalla and Langano were one great lake. As the water fell they split apart. The explorer Herbert Weld Blundell noted old shorelines about 80 feet above today's level in 1906, and local tradition tells of a kingdom of seventy-eight chiefs that vanished under the water in a single night.\n\nThe lake is under pressure from irrigation, flower-farm runoff and sediment. The Lake health page explains what the city and its partners are doing about it.",
+      "facts": ["440 km² surface", "Max depth about 9 m", "Elevation 1,636 m", "Catchment 7,025 km²", "Five islands"],
+      "coords": [7.9800, 38.8000],
+      "sources": ["Wikipedia: Lake Ziway", "Divingmore (2019)", "Weld Blundell, Geographical Journal (1906)"]
+    },
+    {
+      "id": "tulu-gudo",
+      "kind": "heritage",
+      "title": "Tulu Gudo and the Ark",
+      "kicker": "Seventy-two years of a nation's secret",
+      "image": "tulu-gudo-terraces",
+      "summary": "The largest island, about 350 m high. Tradition says priests carried the Ark of the Covenant here from Aksum in the 10th century and kept it hidden for 72 years.",
+      "body": "Tulu Gudo means 'big mountain' in Afaan Oromo; in Amharic it is Debre Tsion, Mount Zion. Zay tradition holds that when Queen Gudit threatened Aksum in the 10th century, priests carried the Ark of the Covenant south and hid it on this island for 72 years before it returned north. Visit Ethiopia dates the monastery's foundation to 842 AD; historians place a monastery here at least by the 14th century, when the monks Anorewos and Filippos were exiled to the lake.\n\nThe monastery of Maryam Tsion keeps Ge'ez manuscripts, processional crosses and a museum. One illuminated book weighs about 30 kg. Visitors hike terraced paths lined with old cactus to the ruins of the first church on the eastern summit, with views over the whole lake.\n\nAbout 900 Zay people live on the island by farming and fishing. Trips are run with the Tulu Gudo Tourism Cooperative and the Hara Dembel Boat Owners Association. Women may not be admitted inside the monastery; ask your guide.",
+      "facts": ["About 6 km²", "Rises about 350 m above the lake", "About 900 residents", "Boat trip about 1.5 hours each way"],
+      "coords": [7.9900, 38.8400],
+      "sources": ["Oromia Culture and Tourism Bureau", "Encyclopaedia Aethiopica: Tulluu Guddoo", "Rough Guides", "Visit Ethiopia"]
+    },
+    {
+      "id": "islands",
+      "kind": "heritage",
+      "title": "The five island monasteries",
+      "kicker": "One lake, five sanctuaries",
+      "image": "tulu-gudo-landscape-1",
+      "summary": "Each island has its own church: Maryam Tsion on Tulu Gudo, Tekle Haymanot on Gelila, Maryam on Debre Sina, Abraham on Tsedecha and Arba'ettu Ensesa on Funduro.",
+      "body": "Tulu Gudo (Debre Tsion) holds Maryam Tsion monastery and the Ark tradition.\n\nGelila, home of Tekle Haymanot church, is the closest island, about 45 minutes by boat. Travellers and The Reporter describe it as home only to the clergy and one elderly woman who lives alone; many call it the one-woman island.\n\nDebre Sina is a small, forested island with historic caves, old manuscripts and medieval processional crosses.\n\nTsedecha, 'acacia island' in Afaan Oromo, holds Abraham church and terrace farms. Funduro, 'the nearer island', holds Arba'ettu Ensesa, the church of the Four Creatures.\n\nNear Gelila, the tiny Bird Island is a year-round roost and breeding site for cormorants, egrets, pelicans and herons.\n\nMost island churches open for holidays; Tulu Gudo's is open to visitors through the week.",
+      "facts": ["Tulu Gudo: Maryam Tsion", "Gelila: Tekle Haymanot", "Debre Sina: Maryam", "Tsedecha: Abraham", "Funduro: Arba'ettu Ensesa"],
+      "coords": [7.9500, 38.7800],
+      "sources": ["Hasset Hiking", "Keb Mathews (2022)", "The Reporter Magazine (2023)", "Venture Ethiopia"]
+    },
+    {
+      "id": "timket",
+      "kind": "festival",
+      "title": "Timket on the water",
+      "kicker": "Epiphany, held on the lake",
+      "image": "lac-zway",
+      "summary": "Every 19 January (Tir 11), tabots from the island churches cross the lake by boat and the faithful circle them in motorboats and papyrus tankwa before the water is blessed at dawn.",
+      "body": "Timket, the Ethiopian Epiphany, is on UNESCO's list of intangible cultural heritage. In most cities it is held at a pool or river. In Batu it is held on a natural lake. Tabots from the island churches are brought across the water by boat, and the churches of the city gather them on the shore at Bocceessaa. Through the night there are hymns and prayers; at dawn the priests bless the lake and sprinkle the crowd.\n\nIn January 2026 AP, BBC and Africanews photographed the celebration on Lake Dembel. The next Timket is on 19 January 2027, with Ketera, the eve, on 18 January. Book rooms early: hotels in Batu fill up.",
+      "facts": ["19 January (Tir 11); eve on 18 January", "UNESCO intangible heritage (2019)", "Tabots from the islands arrive by boat"],
+      "coords": [7.9150, 38.7140],
+      "sources": ["AP (Jan 2026)", "BBC (Jan 2026)", "AMN (Jan 2026)", "Africanews (2023, 2026)"]
+    },
+    {
+      "id": "irreecha",
+      "kind": "festival",
+      "title": "Irreecha and the Gadaa site",
+      "kicker": "Thanksgiving at the water's edge",
+      "image": "landscape-ne-ziway",
+      "summary": "At the start of the new year, Oromo families give thanks by laying fresh grass and flowers in the lake. In November 2025 the Ardaa Jilaa Qixxee Waayyuu ceremonial site reopened after 63 years.",
+      "body": "Irreecha is the Oromo thanksgiving festival that marks the end of the rains. On the shores of Lake Dambal, people lay freshly cut grass and flowers on the water and sprinkle themselves with it. Irreecha belongs to the Gadaa system, which UNESCO lists as intangible heritage.\n\nNorth of the city, in Malkaa Shaalloo kebele beside the lake, lies Ardaa Jilaa Qixxee Waayyuu. It was the place where the Oromo of the Batu area made their laws, held blessings and met in hard times. It was closed for more than 63 years and reopened in November 2025, according to the head of the Culture and Tourism Office, Kamaal Badhaasoo. Abbaa Gadaa Abdurrahimaan Dhaqqabii described it as a place of prayer and of Gadaa assembly.",
+      "facts": ["Irreecha: September to October", "Ardaa Jilaa Qixxee Waayyuu reopened November 2025", "In Malkaa Shaalloo kebele"],
+      "coords": [7.9445, 38.7235],
+      "sources": ["Addis Standard Afaan Oromoo (Nov 2025)", "Springs (2023)", "ENA (Oct 2026)"]
+    },
+    {
+      "id": "birds",
+      "kind": "nature",
+      "title": "Pelicans at the jetty",
+      "kicker": "Big birds at arm's length",
+      "image": "pelicans-on-lake-zway",
+      "summary": "Great white pelicans and marabou storks crowd the fish landing, waiting for scraps. Boat trips find hippos almost every time.",
+      "body": "The jetty at the end of Jetty Road is where fishermen land and clean the catch, which is exactly why the birds come. Great white pelicans, marabou storks, sacred ibis, hamerkop and herons gather within a few metres of people. Serious birders also look for the lesser jacana and the black egret, which raises its wings like an umbrella when it fishes.\n\nThe bird and hippo boat trip takes about an hour. The fish landing is a working place: it is busy and it smells, and it is the most memorable hour in Batu.",
+      "facts": ["Best light early morning", "Bird and hippo trip about 1 hour", "Binoculars recommended"],
+      "coords": [7.9254, 38.7240],
+      "sources": ["Rough Guides", "Wikivoyage: Ziway", "Meridiela"]
+    },
+    {
+      "id": "zay",
+      "kind": "heritage",
+      "title": "The Zay people and their language",
+      "kicker": "An endangered Semitic language on a lake",
+      "image": "tulu-gudo-landscape-2",
+      "summary": "The Zay of the islands speak Zay, a Semitic language of the Gurage group with about 5,000 speakers. It is unwritten and endangered.",
+      "body": "The Zay (also called Laqi) live on the islands and shores of Lake Dambal. Their tradition says their ancestors came from Aksum with the Ark. They preserved Christian manuscripts through centuries of isolation, and in 1893 were reconnected with the rest of Ethiopia.\n\nZay is a Semitic language close to Silt'e and Harari. It has no written form, and younger islanders increasingly speak Afaan Oromo. The Zay build wooden boats about 12 m long by hand and fish the lake each morning. Islanders lack electricity and piped water, and many have moved to the mainland.",
+      "facts": ["About 5,000 Zay speakers", "Language: Semitic, Gurage group", "Islands without grid power"],
+      "coords": [7.9900, 38.8400],
+      "sources": ["Wikipedia: Zay language", "The Reporter Magazine (2023)", "CNEWA (2005)"]
+    },
+    {
+      "id": "castel",
+      "kind": "food",
+      "title": "Castel vineyard and Rift Valley wine",
+      "kicker": "Ethiopia's first private vineyard",
+      "image": "landscape-ne-ziway",
+      "summary": "The French Castel group planted vines by the lake in 2007. Its Rift Valley wines are sold across Ethiopia, and the vineyard runs tasting tours.",
+      "body": "Castel chose the shores of Lake Ziway for Ethiopia's first private vineyard in 2007, and produced 1.2 million bottles in its first full season in 2014. Grapes grow without a winter here, so the vines are managed through four seasons of rains and harvests. The winery has trained many local workers, as The Reporter described in August 2026.\n\nTours run from Addis Ababa on the first Saturday of the month, with a vineyard walk and tasting. Fish tibs at the jetty is the other local taste: fried tilapia, eaten with your hands by the water.",
+      "facts": ["Planted 2007", "1.2 million bottles in 2014", "Monthly tours from Addis Ababa"],
+      "coords": [7.9000, 38.7600],
+      "sources": ["Castel Winery", "Rough Guides", "The Reporter (Aug 2026)", "Fine+Rare (2024)"]
+    },
+    {
+      "id": "viewpoint",
+      "kind": "nature",
+      "title": "The escarpment lookout",
+      "kicker": "Sunrise over the Rift",
+      "image": "lake-ziway-wharf",
+      "summary": "About 10 km west on the Butajira road, a rocky escarpment looks over the city, the lake and the far wall of the Rift Valley.",
+      "body": "On a clear morning the lookout shows the whole of Lake Dambal, the islands, the city and the mountains on the far side of the Rift. Go early before the haze rises.",
+      "facts": ["10 km west of the city", "On the road to Butajira", "Best at sunrise"],
+      "coords": [7.9452, 38.6422],
+      "sources": ["Wikivoyage: Ziway"]
+    },
+    {
+      "id": "lake-health",
+      "kind": "nature",
+      "title": "Lake health",
+      "kicker": "Looking after the lake we drink",
+      "image": "horses-lake-ziway",
+      "summary": "Batu drinks treated water from Lake Dambal. Irrigation, flower-farm runoff and sediment are putting the lake under pressure, and the city reports on it openly.",
+      "body": "Batu's water service treats water drawn from Lake Dambal. Between 1998 and 2016 the city's yearly draw grew about five times, to about 1.3 million m³, while the chemicals needed to treat each cubic metre rose about four times. Studies estimate the lake loses about 61 million m³ more than it receives each year, mainly to irrigation, and a study published in December 2024 found it hypereutrophic, rich in nutrients and algae, at all seven sites sampled.\n\nIn 2024 about 50 partners formed the Dembel-Shalla Sub-Basin Multi-Stakeholder Platform. Its technical committees met in Batu in March 2025 to plan water monitoring, pollution control and watershed work. This page will carry the city's own water-quality updates and greening work.",
+      "facts": ["About -61 million m³ a year water balance", "City water draw up 5× from 1998 to 2016", "Hypereutrophic in a 2024 study"],
+      "coords": [7.9254, 38.7240],
+      "sources": ["Merga, Wageningen (2021)", "SINET (Dec 2024)", "NatuReS (Apr 2025)", "EPA Ethiopia fact sheet"]
+    }
+  ],
+  "day_trips": [
+    {"title": "Lake Langano", "distance": "About 40 km south", "text": "A brown, mineral lake that is free of bilharzia and good for swimming, with lodges on both shores."},
+    {"title": "Abijatta-Shalla National Park", "distance": "47 to 56 km south", "text": "Twin lakes: shallow Abijatta draws up to 300,000 flamingos after the rains; Shalla is 266 m deep with hot springs and pelican islands. A scout is required at the gate."},
+    {"title": "Bulbula river", "distance": "About 10 km south", "text": "The lake's only outflow, running south to Lake Abijatta through farmland."},
+    {"title": "Hawassa", "distance": "About 113 km south", "text": "The lakeside capital of Sidama, with a busy fish market and its own pelicans."}
+  ],
+  "stays": [
+    {"name": "Haile Resort Batu", "where": "End of Jetty Road, on the lake shore", "text": "Resort with pool, spa and lake views, owned by the Haile Resorts group.", "sample_contact": true},
+    {"name": "Ziway Lodge", "where": "On the main road", "text": "Cottages around a swimming pool.", "sample_contact": true},
+    {"name": "More hotels to be listed", "where": "", "text": "The Culture and Tourism Office will publish the list of licensed hotels and lodges.", "sample_contact": true}
+  ],
+  "events": [
+    {"date": "2027-01-07", "title": "Genna (Ethiopian Christmas)", "where": "Churches across the city"},
+    {"date": "2027-01-18", "title": "Ketera, the eve of Timket", "where": "Lake shore at Bocceessaa"},
+    {"date": "2027-01-19", "title": "Timket on Lake Dambal", "where": "Lake shore and boats"},
+    {"date": "2027-03-10", "title": "Eid al-Fitr (date depends on the moon)", "where": "Mosques and open grounds"},
+    {"date": "2027-09-12", "title": "Enkutatash, Ethiopian New Year 2020", "where": "Citywide"},
+    {"date": "2027-09-28", "title": "Meskel and Demera bonfire", "where": "City square and island churches"},
+    {"date": "2027-10-02", "title": "Irreecha (date set by the Abbaa Gadaa)", "where": "Lake shore"}
+  ],
+  "getting_here": "Batu is about 160 km south of Addis Ababa: take the Addis–Adama expressway to Modjo, then the road south through the Rift Valley, about 2.5 hours. Buses and minibuses leave Addis Ababa's southern bus stations through the day. The city lies on the main road to Hawassa (113 km further south). Stay on the main road and check current travel advice before you go."
+}

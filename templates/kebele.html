@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ t("Find my kebele") }}{% endblock %}
+{% block head %}{% if not low_data %}<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">{% endif %}{% endblock %}
+{% block main %}
+<header class="page-head">
+  <div class="wrap">
+    <p class="crumbs"><a href="/">{{ t("Home") }}</a> / {{ t("My kebele") }}</p>
+    <h1>{{ t("Find my kebele") }}</h1>
+    <p class="lede">{{ t("Your kebele office handles resident IDs, residence letters and local services. Type a landmark near your home.") }}</p>
+    <form class="askbar" style="box-shadow:none;border:1px solid var(--line)" onsubmit="return false">
+      <label class="sr" for="kq">{{ t("Landmark or kebele name") }}</label>
+      <input id="kq" type="search" value="{{ request.query_params.get('q','') }}" placeholder="{{ t('e.g. jetty, OSU, bus station, Bocceessaa') }}">
+    </form>
+  </div>
+</header>
+<section class="section">
+  <div class="wrap split">
+    <div class="min0">
+      <p class="note" style="margin-bottom:18px">{{ t(kb.note) }}</p>
+      <div class="kebele-list" id="klist">
+        {% for k in kb.kebeles %}
+        <div class="kebele" data-search="{{ (k.name ~ ' ' ~ t(k.name) ~ ' ' ~ k.area ~ ' ' ~ k.landmarks|join(' '))|lower }}" data-lat="{{ k.office[0] }}" data-lng="{{ k.office[1] }}" data-name="{{ t(k.name) }}">
+          <div class="min0">
+            <h3>{{ t(k.name) }} {% if k.sample %}<span class="sample">{{ t("Sample") }}</span>{% endif %}</h3>
+            <p>{{ t(k.area) }}. {{ t("Landmarks") }}: {% for l in k.landmarks %}{{ t(l) }}{{ ", " if not loop.last }}{% endfor %}.</p>
+            <p>{{ t("Administrator") }}: {{ t(k.administrator) }} · {{ t("Waste collection") }}: {{ t(k.waste_day) }} · <span class="mono" style="font-size:.76rem">{{ t(k.name_status) }}</span></p>
+          </div>
+          <a class="btn btn-ghost btn-sm" href="/services/resident-id/apply">{{ t("Book a visit") }}</a>
+        </div>
+        {% endfor %}
+      </div>
+      <p class="muted" id="knone" hidden style="margin-top:12px">{{ t("No kebele matched that landmark. Try another word, or ask the assistant.") }}</p>
+    </div>
+    <aside class="aside min0">
+      <div class="mapbox" id="mapbox">
+        <div><p style="margin-bottom:10px">{{ t("Map of kebele offices (sample locations)") }}</p><button class="btn btn-lake" id="loadmap" type="button">{{ t("Show map") }}</button><p class="muted" style="font-size:.78rem;margin-top:8px">{{ t("The map loads OpenStreetMap tiles, about 300 KB.") }}</p></div>
+      </div>
+      <p class="credit-line">{{ t("Map data") }} © OpenStreetMap contributors</p>
+    </aside>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}<script>window.KEBELE_CENTER=[{{ site.city.coords[0] }},{{ site.city.coords[1] }}];</script>{% endblock %}

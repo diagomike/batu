@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ t(n.title) }}{% endblock %}
+{% block desc %}{{ t(n.summary) }}{% endblock %}
+{% block main %}
+<header class="page-head">
+  <div class="wrap">
+    <p class="crumbs"><a href="/news">{{ t("News") }}</a> / {{ t(n.category) }}</p>
+    <p class="eyebrow">{{ et(n.date) }} · {{ gc(n.date) }}</p>
+    <h1 style="max-width:24ch">{{ t(n.title) }}</h1>
+    <p class="lede">{{ t(n.summary) }}</p>
+  </div>
+</header>
+{% if n.image and img(n.image, 1600) %}<figure class="feature-img" style="margin:0"><img src="{{ img(n.image, 1600) }}" alt=""></figure><div class="wrap"><p class="credit-line">{{ t("Photo") }}: {{ credit(n.image) }} · {{ t("illustrative photo") }}</p></div>{% endif %}
+<section class="section">
+  <div class="wrap split">
+    <article class="prose min0">{{ nl2p(n.body) }}
+      {% if n.url %}<p class="note lake">{{ t("Source") }}: <a href="{{ n.url }}" target="_blank" rel="noopener">{{ n.source }} ↗</a>. {{ t("This summary was written for the portal; read the original for the full report.") }}</p>{% endif %}
+    </article>
+    <aside class="aside min0">
+      <p class="eyebrow">{{ t("More news") }}</p>
+      <div class="rows">{% for m in more %}<a class="row" href="/news/{{ m.id }}"><div><b>{{ t(m.title) }}</b><span class="mono" style="font-size:.74rem">{{ gc(m.date) }}</span></div></a>{% endfor %}</div>
+    </aside>
+  </div>
+</section>
+{% endblock %}

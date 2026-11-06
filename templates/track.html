@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{ t("Track a request") }}{% endblock %}
+{% block main %}
+<header class="page-head">
+  <div class="wrap">
+    <p class="crumbs"><a href="/">{{ t("Home") }}</a> / {{ t("Track a request") }}</p>
+    <h1>{{ t("Track a request") }}</h1>
+    <form class="form" method="get" action="/track" style="max-width:520px;margin-top:6px">
+      <div class="field"><label for="ref">{{ t("Reference number") }}</label><div style="display:flex;gap:8px"><input id="ref" name="ref" type="text" value="{{ ref }}" placeholder="BTU-R-2611-…" required><button class="btn btn-lake">{{ t("Track") }}</button></div></div>
+    </form>
+  </div>
+</header>
+<section class="section">
+  <div class="wrap split">
+    <div class="min0">
+      {% if ref and not r %}<p class="note red">{{ t("No request has that reference. Check the number and try again.") }}</p>{% endif %}
+      {% if r %}
+        {% if new %}
+        <div class="success" style="margin-bottom:28px">
+          <svg class="check" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="29"/><path d="M19 33l9 9 17-19"/></svg>
+          <h2 style="font-size:1.6rem">{{ t("Sent. We have your request.") }}</h2>
+          <p class="muted">{{ t("Keep this reference number to follow your request") }}:</p>
+          <span class="refbox pop">{{ r.ref }}</span>
+        </div>
+        {% endif %}
+        <p class="eyebrow">{{ t(r.kind|capitalize) }} · <span class="mono">{{ r.ref }}</span></p>
+        <h2 style="margin:6px 0 10px">{{ t(r.title) }}</h2>
+        <p style="margin-bottom:20px"><span class="tag {{ 'ok' if r.status in ['resolved','closed','ready','scheduled','paid'] else ('warn' if r.status == 'awaiting_payment' else 'lake') }}" style="font-size:.8rem">{{ t(r.status_label) }}</span></p>
+        {% if r.status == "awaiting_payment" and not r.paid %}<p style="margin-bottom:20px"><a class="btn btn-accent" href="/pay?ref={{ r.ref }}">{{ t("Pay") }} {{ money(r.amount) }}</a></p>{% endif %}
+        <ol class="timeline">{% for h in r.history|reverse %}<li style="--i:{{ loop.index0 }}"><b>{{ t(h.note) }}</b><small>{{ h.at.replace("T", " ") }}</small></li>{% endfor %}</ol>
+      {% endif %}
+    </div>
+    <aside class="aside min0"><div class="card"><p class="eyebrow">{{ t("Statuses") }}</p><p class="muted" style="font-size:.88rem">{{ t("Received → In review → Work in progress or Awaiting payment → Ready, Resolved or Closed. Staff update the status as they work.") }}</p></div></aside>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ t("Receipt") }}{% endblock %}
+{% block main %}
+<header class="page-head">
+  <div class="wrap">
+    <svg class="check" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="29"/><path d="M19 33l9 9 17-19"/></svg>
+    <p class="eyebrow" style="color:var(--ok)">{{ t("Payment received") }}</p>
+    <h1>{{ t("Thank you. Your payment is confirmed.") }}</h1>
+  </div>
+</header>
+<section class="section">
+  <div class="wrap split">
+    <div class="min0" style="display:grid;gap:16px">
+      <div><span class="eyebrow">{{ t("Receipt number") }}</span><br><span class="refbox pop">{{ p.receipt }}</span></div>
+      <table class="t" style="max-width:560px"><tbody>
+        <tr><th>{{ t("For") }}</th><td>{{ t(r.title) }}</td></tr>
+        <tr><th>{{ t("Amount") }}</th><td class="num">{{ money(p.amount) }}</td></tr>
+        <tr><th>{{ t("Reference") }}</th><td class="mono">{{ r.ref }}</td></tr>
+        <tr><th>{{ t("Date") }}</th><td>{{ today_et }} · {{ today_gc }}</td></tr>
+      </tbody></table>
+      {% if r.kind == "booking" %}
+      <div class="card" style="max-width:560px"><p class="eyebrow">{{ t("Your ticket") }}</p><p>{{ t("Show this code at the jetty") }}:</p><div id="qr" data-code="{{ r.ref }}" style="background:#fff;padding:10px;width:max-content"></div><span class="refbox">{{ r.ref }}</span></div>
+      {% endif %}
+      <div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn btn-lake" href="/track?ref={{ r.ref }}">{{ t("Track this request") }}</a><a class="btn btn-ghost" href="/">{{ t("Home") }}</a></div>
+    </div>
+    <aside class="aside min0"><p class="note">{{ t("Demo build: no money moved. With the real Telebirr integration, the receipt is also sent by SMS.") }}</p></aside>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}{% if r.kind == "booking" and not low_data %}<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script><script>document.addEventListener("DOMContentLoaded",function(){var el=document.getElementById("qr");if(el&&window.QRCode){new QRCode(el,{text:el.dataset.code,width:140,height:140});}});</script>{% endif %}{% endblock %}

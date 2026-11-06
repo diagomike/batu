@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ t("News and notices") }}{% endblock %}
+{% block main %}
+<header class="page-head">
+  <div class="wrap">
+    <p class="crumbs"><a href="/">{{ t("Home") }}</a> / {{ t("News") }}</p>
+    <h1>{{ t("News and notices") }}</h1>
+    <p class="lede">{{ t("News from Batu with links to the original reports, service notices, tenders and vacancies.") }}</p>
+    <nav class="chips"><a href="#notices">{{ t("Notices") }}</a><a href="#tenders">{{ t("Tenders") }}</a><a href="#vacancies">{{ t("Vacancies") }}</a><a href="/api/news">{{ t("News feed (JSON)") }}</a></nav>
+  </div>
+</header>
+<section class="section">
+  <div class="wrap split">
+    <div class="min0">
+      <div class="news-list">
+        {% for n in news %}
+        <a class="news-item" href="/news/{{ n.id }}"><span class="d">{{ et(n.date) }}<br>{{ gc(n.date) }}<br><span class="tag lake" style="margin-top:6px;display:inline-block">{{ t(n.category) }}</span></span><div><h3>{{ t(n.title) }}</h3><p>{{ t(n.summary) }}</p><p class="mono" style="font-size:.72rem;margin-top:6px">{{ t("Source") }}: {{ n.source }}</p></div></a>
+        {% endfor %}
+      </div>
+    </div>
+    <aside class="aside min0" id="notices">
+      <div class="card">
+        <p class="eyebrow">{{ t("Notices") }}</p>
+        {% for n in notices %}<div style="padding:8px 0;border-bottom:1px solid var(--line)"><span class="tag reed">{{ t(n.category) }}</span> {% if n.sample %}<span class="sample">{{ t("Sample") }}</span>{% endif %}<p style="margin-top:6px"><b>{{ t(n.title) }}</b></p><p class="muted" style="font-size:.88rem">{{ t(n.summary) }}</p><p class="mono muted" style="font-size:.72rem">{{ et(n.date) }}</p></div>{% endfor %}
+      </div>
+      <div class="card">
+        <p class="eyebrow">{{ t("Get notices") }}</p>
+        {% if request.query_params.get("subscribed") %}<p class="note lake">{{ t("Thank you. You will get notices when the service goes live.") }}</p>{% endif %}
+        <form class="form" method="post" action="/subscribe" style="gap:10px">
+          <div class="field"><label for="sc">{{ t("Phone (SMS) or Telegram username") }}</label><input id="sc" name="contact" type="text" required></div>
+          <div class="field"><label for="ch">{{ t("Channel") }}</label><select id="ch" name="channel"><option value="sms">SMS</option><option value="telegram">Telegram</option></select></div>
+          <button class="btn btn-lake">{{ t("Subscribe") }}</button>
+        </form>
+      </div>
+    </aside>
+  </div>
+</section>
+<section class="section tint" id="tenders">
+  <div class="wrap">
+    <div class="sec-head"><div><p class="eyebrow">{{ t("Procurement") }}</p><h2>{{ t("Tenders") }}</h2></div></div>
+    <div class="table-wrap"><table class="t">
+      <thead><tr><th>{{ t("Tender") }}</th><th>{{ t("Office") }}</th><th>{{ t("Published") }}</th><th>{{ t("Deadline") }}</th><th>{{ t("Status") }}</th><th></th></tr></thead>
+      <tbody>{% for tn in tenders %}<tr><td><b>{{ t(tn.title) }}</b> {% if tn.sample %}<span class="sample">{{ t("Sample") }}</span>{% endif %}</td><td>{{ t(tn.office) }}</td><td class="mono">{{ gc(tn.published) }}</td><td class="mono">{{ gc(tn.deadline) }}</td><td><span class="tag {{ 'ok' if tn.status == 'Open' else 'warn' }}">{{ t(tn.status) }}</span></td>
+      <td>{% if tn.status == "Open" %}<a class="btn btn-ghost btn-sm" href="/services/tender-documents">{{ t("Buy documents") }} ({{ tn.fee }} birr)</a>{% elif tn.source_url %}<a href="{{ tn.source_url }}" target="_blank" rel="noopener">{{ t("Notice") }} ↗</a>{% endif %}</td></tr>{% endfor %}</tbody>
+    </table></div>
+  </div>
+</section>
+<section class="section" id="vacancies">
+  <div class="wrap">
+    <div class="sec-head"><div><p class="eyebrow">{{ t("Jobs") }}</p><h2>{{ t("Vacancies") }}</h2></div></div>
+    <div class="rows">{% for v in vacancies %}<div class="row"><div><b>{{ t(v.title) }}</b> <span class="sample">{{ t("Sample") }}</span><span>{{ t(v.office) }} · {{ v.positions }} {{ t("positions") }} · {{ t("Apply by") }} {{ gc(v.deadline) }}</span></div><a class="btn btn-ghost btn-sm" href="/services/jobs">{{ t("How to apply") }}</a></div>{% endfor %}</div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}{{ t("Pay a fee") }}{% endblock %}
+{% block main %}
+<header class="page-head">
+  <div class="wrap">
+    <p class="crumbs"><a href="/">{{ t("Home") }}</a> / {{ t("Pay a fee") }}</p>
+    <h1>{{ t("Pay a city fee") }}</h1>
+    <p class="lede">{{ t("Enter the reference number on your bill, booking or request. Pay with Telebirr and get a receipt number straight away.") }}</p>
+  </div>
+</header>
+<section class="section">
+  <div class="wrap split">
+    <div class="min0" style="display:grid;gap:22px">
+      <form class="form" method="get" action="/pay" style="max-width:520px">
+        <div class="field"><label for="ref">{{ t("Reference number") }}</label><input id="ref" name="ref" type="text" value="{{ ref }}" placeholder="BTU-B-2611-… / LL-BTU-0001" required><span class="hint">{{ t("Try the sample land lease bill: LL-BTU-0001") }}</span></div>
+        <div><button class="btn btn-lake">{{ t("Find the bill") }}</button></div>
+      </form>
+      {% if request.query_params.get("failed") %}<p class="note red">{{ t("The payment did not go through. Nothing was charged. You can try again.") }}</p>{% endif %}
+      {% if ref and not r %}<p class="note red">{{ t("No bill or request has that reference. Check the number and try again.") }}</p>{% endif %}
+      {% if r %}
+      <div class="card" style="max-width:560px">
+        <p class="eyebrow">{{ t("Bill") }} · <span class="mono">{{ r.ref }}</span></p>
+        <h3>{{ t(r.title) }}</h3>
+        {% if r.amount %}<b style="font-family:var(--f-display);font-size:2rem" class="num">{{ money(r.amount) }}</b>{% endif %}
+        <p class="muted">{{ t("Status") }}: {{ t(r.status_label) }}</p>
+        {% if r.paid %}<p class="note lake">{{ t("This has already been paid.") }} <a href="/track?ref={{ r.ref }}">{{ t("See the status") }}</a></p>
+        {% elif not r.amount %}<p class="note">{{ t("This request has no fee to pay online.") }}</p>
+        {% else %}
+        <form method="post" action="/pay"><input type="hidden" name="ref" value="{{ r.ref }}"><button class="btn btn-accent">{{ t("Pay with") }} {{ t(provider.label) }}</button></form>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+    <aside class="aside min0">
+      <div class="card"><p class="eyebrow">{{ t("What you can pay here") }}</p>
+        <ul class="factlist">
+          <li>{{ t("Land lease and land-use rent") }}</li><li>{{ t("Building permit and plan fees") }}</li><li>{{ t("Certificates and residence letters") }}</li><li>{{ t("Tender documents") }}</li><li>{{ t("Sign and advertising permits") }}</li><li>{{ t("Market stall rent") }}</li><li>{{ t("Boat trips and venue bookings") }}</li>
+        </ul>
+        <p class="muted" style="font-size:.84rem">{{ t("Water and electricity bills are paid to the utilities.") }}</p>
+      </div>
+    </aside>
+  </div>
+</section>
+{% endblock %}

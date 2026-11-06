@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{{ t("Apply") }}: {{ t(s.title) }}{% endblock %}
+{% block main %}
+<header class="page-head">
+  <div class="wrap">
+    <p class="crumbs"><a href="/services">{{ t("Services") }}</a> / <a href="/services/{{ s.id }}">{{ t(s.title) }}</a> / {{ t("Apply") }}</p>
+    <h1>{{ t(s.title) }}</h1>
+    <p class="lede">{{ t("Send your request online. You get a reference number to track it. Bring the original documents when the office calls you.") }}</p>
+  </div>
+</header>
+<section class="section">
+  <div class="wrap split">
+    <form class="form min0" method="post" data-stepper data-submit-label="{{ t('Send request') }}">
+      <fieldset class="step"><legend>{{ t("About you") }}</legend>
+        <div class="field"><label for="name">{{ t("Full name") }}</label><input id="name" name="name" type="text" required autocomplete="name"></div>
+        <div class="field"><label for="phone">{{ t("Phone number") }}</label><input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="09…"><span class="hint">{{ t("We use it only to tell you when your request is ready.") }}</span></div>
+        <div class="field"><label for="kebele">{{ t("Your kebele") }}</label><select id="kebele" name="kebele"><option value="">{{ t("Choose…") }}</option>{% for k in kebeles %}<option>{{ t(k.name) }}</option>{% endfor %}</select></div>
+      </fieldset>
+      <fieldset class="step"><legend>{{ t("Your request") }}</legend>
+        <div class="field"><label for="visit_date">{{ t("Preferred day to visit the office") }}</label><input id="visit_date" name="visit_date" type="date" min="{{ today.isoformat() }}"></div>
+        <div class="field"><label for="details">{{ t("Anything the office should know") }}</label><textarea id="details" name="details"></textarea></div>
+      </fieldset>
+      <fieldset class="step js-only" data-review><legend>{{ t("Check your answers") }}</legend><dl class="review"></dl></fieldset>
+      <div class="nojs-submit"><button class="btn btn-accent">{{ t("Send request") }}</button></div>
+      <p class="muted" style="font-size:.84rem">{{ t("Demo build: requests are stored on this server only and are not sent to a real office yet.") }}</p>
+    </form>
+    <aside class="aside min0">
+      <div class="card">
+        <p class="eyebrow">{{ t("Fee") }}</p>
+        <b style="font-family:var(--f-display);font-size:1.6rem">{% if s.fee.amount %}{{ "{:,}".format(s.fee.amount) }} {{ t(s.fee.unit) }}{% elif s.fee.amount == 0 %}{{ t("Free") }}{% else %}{{ t("Varies") }}{% endif %}</b>
+        <span class="muted" style="font-size:.84rem">{{ t(s.fee.note) }}</span>
+        {% if s.fee.amount %}<p style="font-size:.88rem">{{ t("After you send the request you can pay online with Telebirr.") }}</p>{% endif %}
+      </div>
+      {% if s.documents %}<div class="card"><p class="eyebrow">{{ t("Bring these") }}</p><ul class="checklist">{% for d in s.documents %}<li><span>{{ t(d) }}</span></li>{% endfor %}</ul></div>{% endif %}
+    </aside>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="{{ langs[lang].html }}" {% if low_data %}class="lowdata"{% endif %}>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{% block title %}{{ t("City of Batu") }}{% endblock %} · {{ site.city.name_om }}</title>
+<meta name="description" content="{% block desc %}{{ t('Official portal of the Batu City Administration, Oromia: city services, kebele offices, notices and visitor information for Lake Dambal.') }}{% endblock %}">
+<meta name="theme-color" content="#0C1B2A">
+{% if not low_data %}
+{# fonts are self-hosted (tools/fetch_fonts.py); the ones visible on first paint are preloaded #}
+<link rel="preload" href="/static/fonts/zilla-slab-700-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/static/fonts/noto-sans-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/static/fonts/ibm-plex-mono-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+{% if lang == "am" %}<link rel="preload" href="/static/fonts/noto-sans-ethiopic-400-ethiopic.woff2" as="font" type="font/woff2" crossorigin>{% endif %}
+<link rel="stylesheet" href="/static/fonts/fonts.css">
+{% endif %}
+<link rel="stylesheet" href="/static/css/site.css">
+<link rel="stylesheet" href="/static/css/motion.css">
+<link rel="stylesheet" href="/static/css/cinema.css">
+<script>
+/* Arm the entrance before first paint (see css/cinema.css). If cinema.js has not started it
+   within 3.5 s, drop the armed state so the page is simply shown. */
+(function(d,w){var c=d.documentElement.classList;c.add("js");
+if(/[?&]shot=1/.test(location.search)){c.add("shot");return}
+if(w.matchMedia&&w.matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+c.add("cine");try{if(sessionStorage.getItem("batu-seen"))c.add("seen")}catch(e){}
+w.addEventListener("pagereveal",function(e){if(e.viewTransition)c.add("vt")});
+(function arm(ms){setTimeout(function(){if(c.contains("go"))return;
+if(d.hidden){d.addEventListener("visibilitychange",function(){arm(1500)},{once:true});return}
+c.remove("cine")},ms)})(3500)})(document,window);
+</script>
+<link rel="icon" href="/static/img/mark.svg" type="image/svg+xml">
+{% block head %}{% endblock %}
+</head>
+<body class="{% block bodyclass %}{% endblock %}">
+<a class="skip" href="#main">{{ t("Skip to main content") }}</a>
+<div class="progress-line" aria-hidden="true"></div>
+
+{% set over = self.header_mode() | trim == "over" %}
+<header class="masthead {{ 'over' if over }}" id="masthead">
+  <div class="wrap">
+    <div class="hbar">
+      <a class="brand" href="/" aria-label="{{ t('City of Batu home') }}">
+        {% include "_mark.html" %}
+        <span><b>{{ site.city.name_om }}</b><span>{{ t("City of Batu") }} · {{ site.city.name_am }}</span></span>
+      </a>
+      <nav class="nav" aria-label="{{ t('Main') }}">
+        {% set links = [("/services", "Services"), ("/discover", "Discover Batu"), ("/kebele", "My kebele"), ("/government", "City government"), ("/invest", "Invest"), ("/news", "News")] %}
+        {% for href, label in links %}<a href="{{ href }}" {% if path.startswith(href) %}aria-current="page"{% endif %}>{{ t(label) }}</a>{% endfor %}
+      </nav>
+      <div class="hdr-actions">
+        <nav class="lang-pill" aria-label="{{ t('Language') }}">
+          {% for code, l in langs.items() %}<a href="/settings/lang/{{ code }}?back={{ path }}" lang="{{ l.html }}" title="{{ l.name }}" aria-current="{{ 'true' if code == lang else 'false' }}"><span>{{ l.short }}</span></a>{% endfor %}
+        </nav>
+        <a class="sos" href="/emergency" title="{{ t('Emergency numbers') }}"><i></i><span class="lbl">{{ t("Emergency") }} </span>991</a>
+        <a class="btn btn-accent btn-sm btn-ask" href="/ask">{{ t("Ask Batu") }}</a>
+        <details class="mnav">
+          <summary aria-label="{{ t('Menu') }}"><span class="burger"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg></span></summary>
+          <div class="mnav-panel">
+            {% for href, label in links %}<a href="{{ href }}">{{ t(label) }}</a>{% endfor %}
+            <div class="small">
+              {% for code, l in langs.items() %}<a href="/settings/lang/{{ code }}?back={{ path }}" lang="{{ l.html }}" {% if code == lang %}style="background:var(--gold);color:var(--on-gold)"{% endif %}>{{ l.name }}</a>{% endfor %}
+              <a href="/report">{{ t("Report a problem") }}</a><a href="/pay">{{ t("Pay a fee") }}</a><a href="/track">{{ t("Track a request") }}</a><a href="/book">{{ t("Book a boat trip") }}</a><a href="/emergency">{{ t("Emergency numbers") }}</a><a href="/settings/lowdata?back={{ path }}">{{ t("Low-data mode: on") if low_data else t("Low-data mode") }}</a>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+    {% if machine %}<div class="mt-note" role="note"><b>{{ t("Machine translated") }}</b><span>{{ t("Translated with Google Translate; being checked by city staff.") }}</span><a href="/settings/lang/en?back={{ path }}">{{ t("Read in English") }}</a></div>{% endif %}
+  </div>
+</header>
+{% if false %}{% block header_mode %}{% endblock %}{% endif %}
+
+<main id="main">
+{% block main %}{% endblock %}
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <p class="big">{{ t("Batu.") }} <em>{{ t("City of the lake.") }}</em></p>
+    <div class="cols">
+      <div>
+        <h4>{{ t("Batu City Administration") }}</h4>
+        <span style="display:block;width:40px;margin-bottom:10px">{% include "_mark.html" %}</span>
+        <p>{{ t("East Shewa Zone, Oromia, Ethiopia") }}<br>{{ t("Western shore of Lake Dambal") }}</p>
+        <p style="margin-top:10px">{{ t(site.hours) }} {% if site.hours_sample %}<span class="sample">{{ t("Sample") }}</span>{% endif %}</p>
+      </div>
+      <div>
+        <h4>{{ t("Do it online") }}</h4>
+        <ul>
+          <li><a href="/services">{{ t("Find a service") }}</a></li>
+          <li><a href="/report">{{ t("Report a problem") }}</a></li>
+          <li><a href="/pay">{{ t("Pay a fee") }}</a></li>
+          <li><a href="/book">{{ t("Book a boat trip") }}</a></li>
+          <li><a href="/track">{{ t("Track a request") }}</a></li>
+          <li><a href="/report?category=complaint">{{ t("Make a complaint") }}</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>{{ t("The city") }}</h4>
+        <ul>
+          <li><a href="/government">{{ t("Mayor and offices") }}</a></li>
+          <li><a href="/kebele">{{ t("Find my kebele") }}</a></li>
+          <li><a href="/news#tenders">{{ t("Tenders") }}</a></li>
+          <li><a href="/news#vacancies">{{ t("Vacancies") }}</a></li>
+          <li><a href="/about">{{ t("About Batu") }}</a></li>
+          <li><a href="/discover/lake-health">{{ t("Lake health") }}</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>{{ t("Trust") }}</h4>
+        <ul>
+          <li><a href="/assistant">{{ t("How the assistant works") }}</a></li>
+          <li><a href="/about#data">{{ t("Data protection") }}</a></li>
+          <li><a href="/about#credits">{{ t("Photo credits") }}</a></li>
+          <li><a href="/settings/lowdata?back={{ path }}">{{ t("Low-data mode: on") if low_data else t("Low-data mode") }}</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="titleblock" aria-label="{{ t('About this site') }}">
+      <div><small>{{ t("Project") }}</small><b>{{ site.city.domain }}</b></div>
+      <div><small>{{ t("Client") }}</small><b>{{ t("Office of the Mayor") }}</b></div>
+      <div><small>{{ t("Location") }}</small><b>7°56′N 38°43′E · 1,643 m</b></div>
+      <div><small>{{ t("Date") }}</small><b>{{ today_et }}</b></div>
+      <div class="sos-cell"><small>{{ t("Emergency") }}</small><b>{% for e in site.emergency %}{{ e.number }}{{ " · " if not loop.last }}{% endfor %}</b></div>
+      <div><small>{{ t("Status") }}</small><b>{{ t("Demo build") }} · © {{ today.year }}</b></div>
+    </div>
+    <p class="mono" style="font-size:.68rem;color:#7F95A8">{{ t("Demo build: items marked Sample are placeholders until the city confirms them.") }}</p>
+  </div>
+</footer>
+
+<div class="statusbar" role="contentinfo" aria-label="{{ t('Status') }}">
+  <a class="brandcell" href="/">▲ {{ site.city.name_om }}</a>
+  <span>{{ langs[lang].name }}</span>
+  <span>{{ today_et }}</span>
+  <span>{{ today_gc }}</span>
+  <a href="/assistant">{{ t("Assistant") }}: {{ "Gemini" if gemini_on else t("records") }}</a>
+  <span class="grow"></span>
+  <a href="#" data-palette>{{ t("Search or ask") }} <kbd>Ctrl K</kbd></a>
+  <a class="sos-cell" href="/emergency">{{ t("Emergency") }} 991 · 907 · 939</a>
+</div>
+
+<div class="palette" id="palette" hidden role="dialog" aria-modal="true" aria-label="{{ t('Search or ask') }}">
+  <div class="box">
+    <div class="in"><span>&gt;</span><label class="sr" for="palq">{{ t("Search or ask") }}</label><input id="palq" type="text" autocomplete="off" placeholder="{{ t('Search services, places, pages, or ask a question…') }}"></div>
+    <ul id="pallist" role="listbox"></ul>
+    <div class="foot-hint"><span>↑↓ {{ t("move") }}</span><span>Enter {{ t("open") }}</span><span>Esc {{ t("close") }}</span></div>
+  </div>
+</div>
+<script type="application/json" id="palette-data">{{ palette_items | tojson }}</script>
+
+{% block mobilecta %}{% endblock %}
+<nav class="tabbar" aria-label="{{ t('Quick navigation') }}">
+  <a href="/" {% if path == "/" %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>{{ t("Home") }}</a>
+  <a href="/services" {% if path.startswith("/services") %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg>{{ t("Services") }}</a>
+  <a class="ask" href="/ask" data-open-ask {% if path.startswith("/ask") %}aria-current="page"{% endif %}><span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 10h8M8 13h5"/></svg></span>{{ t("Ask") }}</a>
+  <a href="/discover" {% if path.startswith("/discover") %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17c2 1.5 4 1.5 6 0s4-1.5 6 0 4 1.5 6 0"/><path d="M5 14l2-5h10l2 5"/><path d="M12 9V4l4 2-4 2"/></svg>{{ t("Discover") }}</a>
+  <a href="/track" {% if path.startswith("/track") or path.startswith("/pay") or path.startswith("/receipt") %}aria-current="page"{% endif %}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M9 4h6l1 3h4v13H4V7h4z"/><path d="M9 13l2 2 4-4"/></svg>{{ t("My requests") }}</a>
+</nav>
+
+{% if not path.startswith("/ask") %}
+<div class="scrim" id="askscrim" hidden></div>
+<button class="btn btn-accent fab" id="fab" aria-expanded="false" aria-controls="askpanel">{{ t("Ask Batu") }}</button>
+<section class="panel" id="askpanel" hidden aria-label="{{ t('Ask Batu') }}">
+  <header><b>{{ t("Ask Batu") }}</b><button type="button" id="askclose" aria-label="{{ t('Close') }}">×</button></header>
+  <div class="log" id="asklog">
+    <div class="msg a">{{ t("Ask about city services, fees, offices, kebeles or visiting the lake. I answer from the city's own pages and show my sources.") }}</div>
+    <p class="disclaimer">{{ t("For emergencies call 991, 907 or 939. Do not share ID or phone numbers here.") }}</p>
+  </div>
+  <form id="askform"><label class="sr" for="askq">{{ t("Your question") }}</label><input id="askq" type="text" autocomplete="off" placeholder="{{ t('Type your question') }}"><button class="btn btn-lake btn-sm">{{ t("Ask") }}</button></form>
+</section>
+{% endif %}
+<script>window.BATU={lang:"{{ lang }}",sources:"{{ t('Sources') }}",sample:"{{ t('contains sample data') }}",thinking:"{{ t('Looking it up…') }}",step:"{{ t('Step') }}",of:"{{ t('of') }}",next:"{{ t('Next') }}",back:"{{ t('Back') }}",review:"{{ t('Check your answers') }}",processing:"{{ t('Waiting for confirmation…') }}",confirmed:"{{ t('Payment confirmed') }}",error:"{{ t('Sorry, something went wrong. Please try again.') }}",mode:{gemini:"{{ t('Answer written by AI from the sources below') }}",keyword:"{{ t('Quoted from the city records below') }}",emergency:"{{ t('Emergency') }}"}};</script>
+<script src="/static/js/cinema.js" defer></script>
+<script src="/static/js/site.js" defer></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

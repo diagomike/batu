@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ t("Emergency numbers") }}{% endblock %}
+{% block main %}
+<header class="page-head danger">
+  <div class="wrap">
+    <p class="eyebrow" style="color:#fff">{{ t("Emergency") }}</p>
+    <h1>{{ t("In an emergency, call now") }}</h1>
+    <p class="lede">{{ t("These national short codes work from any phone, without credit.") }}</p>
+  </div>
+</header>
+<section class="section">
+  <div class="wrap">
+    <div class="stats">
+      {% for e in site.emergency %}<div class="stat card"><b style="font-size:3.4rem;color:var(--danger)">{{ e.number }}</b><span style="font-size:1.05rem;color:var(--fg)">{{ t(e.label) }}</span><small>{{ t(e.note) }}</small></div>{% endfor %}
+    </div>
+    <h2 style="margin:44px 0 14px;font-size:1.4rem">{{ t("Local numbers in Batu") }}</h2>
+    <div class="rows">{% for e in site.local_emergency %}<div class="row"><div><b>{{ t(e.label) }}</b></div><span class="sample">{{ t(e.number) }}</span></div>{% endfor %}</div>
+    <p class="note" style="margin-top:18px">{{ t("Local station numbers will be published as soon as the city confirms them.") }}</p>
+  </div>
+</section>
+{% endblock %}

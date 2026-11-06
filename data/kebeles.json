@@ -1,0 +1,12 @@
+{
+  "note": "Oromia announced in February 2023 that Batu and Adami Tullu would be organised into 7 kebeles. Names below come from news reports where available; boundaries, offices and administrators are samples until the city confirms them.",
+  "kebeles": [
+    {"id": "malkaa-shaalloo", "name": "Malkaa Shaalloo", "name_status": "named in Addis Standard, Nov 2025", "area": "North of the city centre, by the lake shore", "landmarks": ["Ardaa Jilaa Qixxee Waayyuu", "North lake shore"], "office": [7.9445, 38.7235], "administrator": "To be confirmed", "waste_day": "Monday", "sample": true},
+    {"id": "battallee", "name": "Battallee", "name_status": "named in BBC Afaan Oromoo, 2022", "area": "Central Batu", "landmarks": ["Main road", "Bus station"], "office": [7.9338, 38.7158], "administrator": "To be confirmed", "waste_day": "Tuesday", "sample": true},
+    {"id": "bocceessaa", "name": "Bocceessaa", "name_status": "lakeside area named in Timket reports", "area": "South-west lake shore", "landmarks": ["Timket grounds", "Gelila boat landing"], "office": [7.9150, 38.7140], "administrator": "To be confirmed", "waste_day": "Wednesday", "sample": true},
+    {"id": "abinee-garmaamaa", "name": "Abinee Garmaamaa", "name_status": "named in BBC Afaan Oromoo, 2026", "area": "Outskirts of Batu", "landmarks": ["Farmland", "River crossing"], "office": [7.9050, 38.7300], "administrator": "To be confirmed", "waste_day": "Thursday", "sample": true},
+    {"id": "jetty", "name": "Kebele 05 (name to confirm)", "name_status": "placeholder", "area": "Jetty and lakeside park", "landmarks": ["Fishing jetty", "Haile Resort", "Asa tibs stalls"], "office": [7.9268, 38.7215], "administrator": "To be confirmed", "waste_day": "Friday", "sample": true},
+    {"id": "university", "name": "Kebele 06 (name to confirm)", "name_status": "placeholder", "area": "University and TVET area", "landmarks": ["Oromia State University", "Batu TVET College", "OSU roundabout"], "office": [7.9410, 38.7050], "administrator": "To be confirmed", "waste_day": "Monday", "sample": true},
+    {"id": "adami-tullu", "name": "Kebele 07 (Adami Tullu, name to confirm)", "name_status": "placeholder", "area": "Adami Tullu, merged in 2023", "landmarks": ["Adami Tullu town", "Research centre road"], "office": [7.8650, 38.7050], "administrator": "To be confirmed", "waste_day": "Tuesday", "sample": true}
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "note": "Projects come from public reports. Progress percentages are samples until the Construction Office confirms them.",
+  "projects": [
+    {"id": "osu-tvet-corridor", "title": "OSU roundabout to TVET College road corridor", "kind": "Road", "length": "1 km", "status": "Under construction", "progress": 40, "progress_sample": true, "start": "2026-02", "end": "To be confirmed", "office": "construction", "source": "Tender notice, January 2026", "coords": [7.9410, 38.7050]},
+    {"id": "lakeside-corridor", "title": "Lakeside corridor and Lake Batu development", "kind": "Public space", "length": "Shoreline promenade", "status": "Ongoing", "progress": 65, "progress_sample": true, "start": "2024", "end": "To be confirmed", "office": "construction", "source": "Mayor, June 2025", "coords": [7.9268, 38.7215]},
+    {"id": "ardaa-jilaa", "title": "Ardaa Jilaa Qixxee Waayyuu heritage site", "kind": "Heritage", "length": "", "status": "Reopened", "progress": 100, "progress_sample": false, "start": "2025", "end": "2025-11", "office": "culture-tourism", "source": "Addis Standard, November 2025", "coords": [7.9445, 38.7235]},
+    {"id": "lodge-plots", "title": "Lakeside lodge plots for investors (17.1 ha)", "kind": "Investment", "length": "17.1 ha", "status": "Open to investors", "progress": 30, "progress_sample": true, "start": "2019", "end": "Ongoing", "office": "investment", "source": "Deputy mayor, October 2019", "coords": [7.9200, 38.7260]},
+    {"id": "expressway", "title": "Modjo–Hawassa expressway, Batu to Arsi Negele (federal)", "kind": "Highway", "length": "57.1 km", "status": "Under construction (federal project)", "progress": 70, "progress_sample": true, "start": "2018", "end": "To be confirmed", "office": "construction", "source": "World Bank RAP, May 2024", "coords": [7.9333, 38.7000]}
+  ]
+}

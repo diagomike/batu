@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}{{ t(s.title) }}{% endblock %}
+{% block desc %}{{ t(s.summary) }}{% endblock %}
+{% set primary = (s.online|selectattr("kind", "in", ["apply", "book", "report", "pay", "visit"])|first) if s.online else none %}
+{% block bodyclass %}{{ "has-cta" if primary }}{% endblock %}
+{% block mobilecta %}{% if primary %}
+<div class="mobile-cta">
+  {% set href = {"apply": "/services/" ~ s.id ~ "/apply", "visit": "/services/" ~ s.id ~ "/apply", "pay": "/pay", "book": "/book" ~ ("?trip=" ~ primary.trip if primary.trip else ""), "report": "/report" ~ ("?category=" ~ primary.category if primary.category else "")}[primary.kind] %}
+  <a class="btn btn-accent" href="{{ href }}">{{ t(primary.label) }}</a>
+</div>
+{% endif %}{% endblock %}
+{% block main %}
+<header class="page-head">
+  <div class="wrap">
+    <p class="crumbs"><a href="/">{{ t("Home") }}</a> / <a href="/services">{{ t("Services") }}</a> / <a href="/services#{{ s.category }}">{{ t((categories|selectattr("id","equalto",s.category)|first).title) }}</a></p>
+    <h1>{{ t(s.title) }}</h1>
+    <p class="lede">{{ t(s.summary) }}</p>
+  </div>
+</header>
+<section class="section">
+  <div class="wrap split">
+    <div class="min0">
+      <div class="svc-meta">
+        <div><span class="eyebrow">{{ t("Fee") }}</span><b class="num">{% if s.fee.amount is none %}{{ t("Varies") }}{% elif s.fee.amount == 0 %}{{ t("Free") }}{% else %}{{ "{:,}".format(s.fee.amount) }} {{ t(s.fee.unit) }}{% endif %}</b><span class="muted" style="font-size:.8rem">{{ t(s.fee.note) }}</span></div>
+        <div><span class="eyebrow">{{ t("Time") }}</span><b style="font-size:1.05rem">{{ t(s.time) }}</b></div>
+        <div><span class="eyebrow">{{ t("Office") }}</span><b style="font-size:1.05rem"><a href="/government#{{ s.office }}">{{ t(office.name) if office else s.office }}</a></b></div>
+      </div>
+
+      <div class="prose">
+        <h2 style="font-size:1.4rem">{{ t("Who can use this service") }}</h2>
+        <p>{{ t(s.who) }}</p>
+        {% if s.documents %}
+        <h2 style="font-size:1.4rem;margin-top:10px">{{ t("What to bring") }}</h2>
+        <ul class="checklist">{% for d in s.documents %}<li><span>{{ t(d) }}</span></li>{% endfor %}</ul>
+        {% endif %}
+        <h2 style="font-size:1.4rem;margin-top:10px">{{ t("Steps") }}</h2>
+        <ol class="steps">{% for st in s.steps %}<li><span>{{ t(st) }}</span></li>{% endfor %}</ol>
+      </div>
+      <p class="note" style="margin-top:28px"><span class="sample">{{ t("Sample") }}</span> {{ t("Requirements, fees and times on this page are placeholders based on common practice in Ethiopian cities, until the office confirms them.") }}</p>
+    </div>
+    <aside class="aside min0">
+      {% if s.online %}
+      <div class="card">
+        <p class="eyebrow">{{ t("Do it online") }}</p>
+        {% for o in s.online %}
+          {% if o.kind == "apply" %}<a class="btn btn-accent" href="/services/{{ s.id }}/apply">{{ t(o.label) }}</a>
+          {% elif o.kind == "pay" %}<a class="btn btn-lake" href="/pay">{{ t(o.label) }}</a>
+          {% elif o.kind == "book" %}<a class="btn btn-accent" href="/book{% if o.trip %}?trip={{ o.trip }}{% endif %}">{{ t(o.label) }}</a>
+          {% elif o.kind == "report" %}<a class="btn btn-accent" href="/report{% if o.category %}?category={{ o.category }}{% endif %}">{{ t(o.label) }}</a>
+          {% elif o.kind == "visit" %}<a class="btn btn-lake" href="/services/{{ s.id }}/apply">{{ t(o.label) }}</a>
+          {% elif o.kind == "external" %}<a class="btn btn-ghost" href="{{ o.url }}" target="_blank" rel="noopener">{{ t(o.label) }} ↗</a>
+          {% elif o.kind == "link" %}<a class="btn btn-ghost" href="{{ o.url }}">{{ t(o.label) }}</a>{% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+      <div class="card">
+        <p class="eyebrow">{{ t("Questions?") }}</p>
+        <p>{{ t("Ask the assistant about this service.") }}</p>
+        <a class="btn btn-ghost" href="/ask?q={{ t(s.title)|urlencode }}">{{ t("Ask Batu") }}</a>
+      </div>
+      {% if related %}
+      <div>
+        <p class="eyebrow" style="margin-bottom:8px">{{ t("Related") }}</p>
+        <div class="rows">{% for r in related %}<a class="row" href="/services/{{ r.id }}"><div><b>{{ t(r.title) }}</b></div></a>{% endfor %}</div>
+      </div>
+      {% endif %}
+    </aside>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,167 @@
+/* Batu portal: cinematic entrances.
+
+   html.cine  motion is allowed and entrance states are armed. Set in <head> before first paint,
+              so nothing is ever shown and then hidden again.
+   html.go    the page entrance is playing. cinema.js sets it once fonts and the hero photo are ready.
+   html.seen  a page was already shown this session: the entrance runs faster (--t).
+   html.vt    the page arrived through a view transition: skip effects that would fight the morph.
+   .in        an element has scrolled into view (cinema.js).
+   .ws        a heading split into word masks; .wp starts its words rising.
+
+   Every animation uses fill "backwards": once it ends, the element falls back to its normal
+   styles, so hover effects and later changes keep working. Without JS, with reduced motion,
+   in print, or if cinema.js fails, html.cine is absent and everything is simply visible. */
+
+:root{--t:1;--ex:cubic-bezier(.16,1,.3,1);--io:cubic-bezier(.7,0,.2,1)}
+.seen{--t:.6}
+
+/* Word masks keep the exact layout of the original heading: padding and negative margin cancel out. */
+.w{display:inline-block;overflow:hidden;vertical-align:top;padding:0 .05em .16em;margin:0 -.05em -.16em}
+.w > span{display:inline-block}
+
+/* Hero slideshow: crossfade with a slow push-in. The first photo carries .on in the markup. */
+.imm .slides img{opacity:0;transform:scale(1.1);transition:opacity 2.2s ease,transform 11s cubic-bezier(.3,0,.3,1)}
+.imm .slides img.on{opacity:1;transform:scale(1)}
+.imm .frame{display:none}
+
+/* Scroll progress, drawn like a plotter line across the top. */
+.progress-line{display:none}
+@supports (animation-timeline:scroll()){
+  .progress-line{display:block;position:fixed;left:0;right:0;top:0;height:2px;background:var(--gold);z-index:90;pointer-events:none;transform-origin:left;transform:scaleX(0);animation:c-progress linear both;animation-timeline:scroll(root)}
+}
+@keyframes c-progress{to{transform:scaleX(1)}}
+
+@keyframes c-up{from{opacity:0;transform:translate3d(0,28px,0)}}
+@keyframes c-fade{from{opacity:0}}
+@keyframes c-left{from{opacity:0;transform:translate3d(56px,0,0)}}
+@keyframes c-wipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+@keyframes c-word{from{transform:translate3d(0,112%,0)}}
+@keyframes c-draw{from{transform:scaleX(0)}}
+@keyframes c-drop{from{opacity:0;transform:translate3d(0,-100%,0)}}
+@keyframes c-bar-up{from{transform:translate3d(0,100%,0)}}
+/* a gold line is drawn across the middle, then opens into the photograph */
+@keyframes c-aperture{0%{clip-path:inset(50% 50% 50% 50%);animation-timing-function:cubic-bezier(.6,0,.3,1)}30%{clip-path:inset(49.7% 9% 49.7% 9%);animation-timing-function:cubic-bezier(.7,0,.15,1)}100%{clip-path:inset(0 0 0 0)}}
+@keyframes c-zoom{from{transform:scale(1.3)}}
+@keyframes c-zoom-s{from{scale:1.3}}
+/* the frame is a gold sheet clipped to a hollow rectangle that follows the same path and timing as
+   c-aperture, so line and photo stay locked together (both are clip-path animations) */
+@keyframes c-framep{0%{clip-path:polygon(evenodd, 50% 50%, calc(100% - 50%) 50%, calc(100% - 50%) calc(100% - 50%), 50% calc(100% - 50%), 50% 50%, calc(50% + 0px) calc(50% + 0px), calc(50% + 0px) calc(100% - 50% - 0px), calc(100% - 50% - 0px) calc(100% - 50% - 0px), calc(100% - 50% - 0px) calc(50% + 0px), calc(50% + 0px) calc(50% + 0px));animation-timing-function:cubic-bezier(.6,0,.3,1)}30%{clip-path:polygon(evenodd, 9% 49.7%, calc(100% - 9%) 49.7%, calc(100% - 9%) calc(100% - 49.7%), 9% calc(100% - 49.7%), 9% 49.7%, calc(9% + 1px) calc(49.7% + 1px), calc(9% + 1px) calc(100% - 49.7% - 1px), calc(100% - 9% - 1px) calc(100% - 49.7% - 1px), calc(100% - 9% - 1px) calc(49.7% + 1px), calc(9% + 1px) calc(49.7% + 1px));animation-timing-function:cubic-bezier(.7,0,.15,1)}100%{clip-path:polygon(evenodd, 0% 0%, calc(100% - 0%) 0%, calc(100% - 0%) calc(100% - 0%), 0% calc(100% - 0%), 0% 0%, calc(0% + 1px) calc(0% + 1px), calc(0% + 1px) calc(100% - 0% - 1px), calc(100% - 0% - 1px) calc(100% - 0% - 1px), calc(100% - 0% - 1px) calc(0% + 1px), calc(0% + 1px) calc(0% + 1px))}}
+@keyframes c-frame{0%,82%{opacity:1}100%{opacity:0}}
+/* clip and zoom share the element and the zoom also enlarges the clip window: 0.72 x 1.15 = 83% wide at the start */
+@keyframes c-unveil{from{clip-path:inset(20% 14% 20% 14%);scale:1.15}to{clip-path:inset(0 0 0 0);scale:1}}
+@keyframes c-rise-img{from{clip-path:inset(100% 0 0 0);scale:1.2}to{clip-path:inset(0 0 0 0);scale:1}}
+@keyframes c-marks{from{opacity:0;transform:scale(.95)}}
+@keyframes c-bg{from{opacity:0;transform:scale(1.16)}}
+
+@media (prefers-reduced-motion:no-preference){
+
+/* ---------- headings that rise word by word ---------- */
+.cine :is(.imm h1,.hero h1,.page-head h1,.story-panel h2,.visit-band h2,.sec-head h2):not(.ws){visibility:hidden}
+.cine .ws:not(.wp) .w > span{transform:translate3d(0,112%,0)}
+.cine .ws.wp .w > span{animation:c-word calc(1150ms * var(--t)) var(--ex) calc(var(--d,0ms) + var(--wi,0) * 62ms * var(--t)) backwards}
+
+/* ---------- home: opening sequence ---------- */
+.cine:not(.go) .imm .slides{clip-path:inset(50% 50% 50% 50%)}
+.cine.go .imm .slides{animation:c-aperture calc(2000ms * var(--t)) linear backwards}
+.cine.go .imm .slides img{animation:c-zoom-s calc(3400ms * var(--t)) var(--ex) backwards}
+.cine .imm .frame{display:block;position:absolute;inset:0;background:var(--gold);opacity:0;z-index:-1;pointer-events:none;clip-path:polygon(0 0,0 0,0 0)}
+.cine.go .imm .frame{animation:c-framep calc(2000ms * var(--t)) linear backwards,c-frame calc(2000ms * var(--t)) linear both}
+
+.cine:not(.seen):not(.vt):not(.go) .masthead.over{opacity:0}
+.cine.go:not(.seen):not(.vt) .masthead.over{animation:c-drop calc(900ms * var(--t)) var(--ex) calc(500ms * var(--t)) backwards}
+
+.cine:not(.go) .imm .meta-row{clip-path:inset(0 100% 0 0)}
+.cine.go .imm .meta-row{animation:c-wipe calc(1000ms * var(--t)) var(--io) calc(300ms * var(--t)) backwards}
+.cine:not(.go) .imm :is(.lede,.strip,.caption),.cine:not(.go) .imm .quick a,.cine:not(.go) .imm .scalebar span{opacity:0}
+.cine:not(.go) .imm .scalebar i{transform:scaleX(0)}
+.imm .scalebar i{transform-origin:left}
+.cine.go .imm .lede{animation:c-up calc(1000ms * var(--t)) var(--ex) calc(1000ms * var(--t)) backwards}
+.cine.go .imm .scalebar i{animation:c-draw calc(900ms * var(--t)) var(--io) calc(1100ms * var(--t)) backwards}
+.cine.go .imm .scalebar span{animation:c-fade calc(700ms * var(--t)) ease calc(1350ms * var(--t)) backwards}
+.cine.go .imm .strip{animation:c-up calc(1000ms * var(--t)) var(--ex) calc(1150ms * var(--t)) backwards}
+.cine.go .imm .quick a{animation:c-up calc(800ms * var(--t)) var(--ex) calc((1400ms + var(--n,0) * 80ms) * var(--t)) backwards}
+.imm .quick a:nth-child(2){--n:1}
+.imm .quick a:nth-child(3){--n:2}
+.imm .quick a:nth-child(4){--n:3}
+.cine.go .imm .caption{animation:c-fade calc(900ms * var(--t)) ease calc(1800ms * var(--t)) backwards}
+.cine:not(.go) .today .wrap{opacity:0}
+.cine.go .today .wrap{animation:c-fade calc(900ms * var(--t)) ease calc(1600ms * var(--t)) backwards}
+
+/* status bar (desktop) and tab bar (phone) slide in on the first page of a visit */
+.cine:not(.seen):not(.go) :is(.statusbar,.tabbar){transform:translate3d(0,100%,0)}
+.cine.go:not(.seen) :is(.statusbar,.tabbar){animation:c-bar-up calc(800ms * var(--t)) var(--ex) calc(1300ms * var(--t)) backwards}
+.cine:not(.go) .fab{opacity:0}
+.cine.go .fab{animation:c-up calc(800ms * var(--t)) var(--ex) calc(1700ms * var(--t)) backwards}
+
+/* ---------- inner pages: header block ---------- */
+.cine:not(.go) .page-head::before,.cine:not(.go) .page-head::after{opacity:0}
+.cine.go .page-head::before{animation:c-bg calc(1900ms * var(--t)) var(--ex) backwards}
+.cine.go .page-head::after{animation:c-fade calc(1200ms * var(--t)) ease backwards}
+.cine:not(.go) .page-head .wrap > :not(h1){opacity:0}
+.cine.go .page-head .wrap > :not(h1){animation:c-up calc(900ms * var(--t)) var(--ex) calc((120ms + var(--n,0) * 120ms) * var(--t)) backwards}
+:is(.page-head,.hero) .wrap > :nth-child(2){--n:1}
+:is(.page-head,.hero) .wrap > :nth-child(3){--n:2}
+:is(.page-head,.hero) .wrap > :nth-child(4){--n:3}
+:is(.page-head,.hero) .wrap > :nth-child(5){--n:4}
+:is(.page-head,.hero) .wrap > :nth-child(n+6){--n:5}
+
+/* photo heroes (Discover, Invest, a place) */
+.cine:not(.go) .hero img.bg{clip-path:inset(50% 50% 50% 50%)}
+.cine.go .hero img.bg{animation:c-aperture calc(1700ms * var(--t)) linear backwards,c-zoom calc(3200ms * var(--t)) var(--ex) backwards}
+.cine.vt .hero img.bg[style*="view-transition-name"]{clip-path:none;animation:none}
+.cine:not(.go) .hero .wrap > :not(h1),.cine:not(.go) .hero .credit{opacity:0}
+.cine.go .hero .wrap > :not(h1){animation:c-up calc(900ms * var(--t)) var(--ex) calc((650ms + var(--n,0) * 120ms) * var(--t)) backwards}
+.cine.go .hero .credit{animation:c-fade 1s ease calc(1400ms * var(--t)) backwards}
+
+/* ---------- scenes that play when scrolled into view ---------- */
+/* full-bleed story panels: the photo opens like an aperture, then the caption card builds */
+.story-panel > img,.visit-band > img{will-change:translate,scale}
+.cine .story-panel:not(.in) > img,.cine .visit-band:not(.in) > img{clip-path:inset(20% 14% 20% 14%);scale:1.15}
+.cine :is(.story-panel,.visit-band).in > img{animation:c-unveil 1.7s var(--io) var(--rd,0ms) backwards}
+.cine .cropped:not(.in)::after{opacity:0}
+.cine .cropped.in::after{animation:c-marks 1.3s var(--ex) calc(var(--rd,0ms) + .55s) backwards}
+.cine .story-panel:not(.in) :is(.copy,.copy > p,.copy > .facts,.copy > div,.credit){opacity:0}
+.cine .story-panel:not(.in) .copy .n{clip-path:inset(0 100% 0 0)}
+.cine .story-panel.in .copy{animation:c-up 1.1s var(--ex) calc(var(--rd,0ms) + .35s) backwards}
+.cine .story-panel.in .copy .n{animation:c-wipe .9s var(--io) calc(var(--rd,0ms) + .6s) backwards}
+.cine .story-panel.in .copy > p{animation:c-up .9s var(--ex) calc(var(--rd,0ms) + 1s) backwards}
+.cine .story-panel.in .copy > .facts{animation:c-up .9s var(--ex) calc(var(--rd,0ms) + 1.12s) backwards}
+.cine .story-panel.in .copy > div{animation:c-up .9s var(--ex) calc(var(--rd,0ms) + 1.24s) backwards}
+.cine .story-panel.in .credit{animation:c-fade 1s ease calc(var(--rd,0ms) + 1.4s) backwards}
+
+.cine .visit-band:not(.in) .inner,.cine .visit-band:not(.in) .inner > :not(h2){opacity:0}
+.cine .visit-band.in .inner{animation:c-fade 1s ease calc(var(--rd,0ms) + .3s) backwards}
+.cine .visit-band.in .inner > .eyebrow{animation:c-up .8s var(--ex) calc(var(--rd,0ms) + .4s) backwards}
+.cine .visit-band.in .inner > p:not(.eyebrow){animation:c-up .9s var(--ex) calc(var(--rd,0ms) + .95s) backwards}
+.cine .visit-band.in .inner > .actions{animation:c-up .9s var(--ex) calc(var(--rd,0ms) + 1.1s) backwards}
+
+.cine .stat-band:not(.in) > img{opacity:0}
+.cine .stat-band.in > img{animation:c-bg 2.2s var(--ex) var(--rd,0ms) backwards}
+
+/* section heads: the rule is drawn, the sheet label types itself, the title rises */
+.cine .sec-head{position:relative;border-top-color:transparent}
+.cine .sec-head::before{content:"";position:absolute;left:0;right:0;top:-1px;height:1px;background:var(--rule-strong);transform-origin:left}
+.cine .section.dark .sec-head::before{background:rgba(255,255,255,.5)}
+.cine .sec-head:not(.in)::before{transform:scaleX(0)}
+.cine .sec-head.in::before{animation:c-draw 1.3s var(--io) var(--rd,0ms) backwards}
+.cine .sec-head:not(.in) .eyebrow{clip-path:inset(0 100% 0 0)}
+.cine .sec-head.in .eyebrow{animation:c-wipe .75s steps(24,end) calc(var(--rd,0ms) + .2s) backwards}
+.cine .sec-head:not(.in) > div > p:not(.eyebrow),.cine .sec-head:not(.in) > :not(div){opacity:0}
+.cine .sec-head.in > div > p:not(.eyebrow){animation:c-up .9s var(--ex) calc(var(--rd,0ms) + .6s) backwards}
+.cine .sec-head.in > :not(div){animation:c-up .9s var(--ex) calc(var(--rd,0ms) + .7s) backwards}
+
+/* cards, rows and tiles: staggered rise in reading order */
+.cine :is(.section .story,.section .card,.events-grid a,.section .row,.stat,.news-item,.kebele,.ncard,.evt,.section .chips a,.section .quote,.explorer):not(.in){opacity:0}
+.cine :is(.section .story,.section .card,.events-grid a,.section .row,.stat,.news-item,.kebele,.ncard,.evt,.section .chips a,.section .quote,.explorer).in{animation:c-up .95s var(--ex) var(--rd,0ms) backwards}
+.cine .pcard:not(.in){opacity:0}
+.cine .pcard.in{animation:c-left 1.1s var(--ex) var(--rd,0ms) backwards}
+.cine .ncard:not(.in) .ph img{clip-path:inset(100% 0 0 0)}
+.cine .ncard.in .ph img{animation:c-rise-img 1.3s var(--io) calc(var(--rd,0ms) + .15s) backwards}
+.cine .bar:not(.in) i{transform:scaleX(0)}
+.cine .bar i{transform-origin:left}
+.cine .bar.in i{animation:c-draw 1.5s var(--ex) var(--rd,0ms) backwards}
+}
+
+@media (prefers-reduced-motion:reduce){.progress-line{display:none}}
+.shot .progress-line,.lowdata .progress-line{display:none}
+@media print{.progress-line,.imm .frame{display:none!important}}

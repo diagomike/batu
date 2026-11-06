@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}{{ t("Page not found") }}{% endblock %}
+{% block main %}
+<section class="section"><div class="wrap" style="max-width:640px;display:grid;gap:14px">
+  <p class="eyebrow">404</p>
+  <h1>{{ t("We could not find that page") }}</h1>
+  <p class="muted">{{ t("It may have moved. Search the services, or ask the assistant.") }}</p>
+  <form class="askbar" action="/ask" method="get" style="box-shadow:none;border:1px solid var(--line)"><label class="sr" for="nq">{{ t("Ask a question") }}</label><input id="nq" name="q" type="text" placeholder="{{ t('Type your question') }}"><button class="btn btn-accent">{{ t("Ask") }}</button></form>
+  <p><a href="/">{{ t("Go to the home page") }}</a></p>
+</div></section>
+{% endblock %}
