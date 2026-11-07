@@ -1,6 +1,6 @@
 """Hybrid retrieval: BM25 keyword search over English and translated text,
 plus Gemini embeddings of every record in English, Afaan Oromoo and Amharic
-when an API key is set (one-time, cached in var/vectors.npz). Results are merged with
+when an API key is set (cached per text in data/vectors.npz, kept in git). Results are merged with
 reciprocal rank fusion. Everything is kept in memory and in one small file.
 """
 from __future__ import annotations
@@ -10,6 +10,7 @@ import json
 import math
 import re
 import threading
+import time
 from collections import Counter
 
 import numpy as np
@@ -18,7 +19,7 @@ from .. import content
 from . import corpus
 from .llm import Gemini
 
-VEC_PATH = content.ROOT / "var" / "vectors.npz"
+VEC_PATH = content.ROOT / "data" / "vectors.npz"
 VEC_LANGS = ("en", "om", "am")  # every record is embedded in each language
 TOKEN = re.compile(r"[\w']+", re.UNICODE)
 STOP = set("""a an the and or of to in on at for with is are was be by it this that from as your you can i my me we our how what get much many
@@ -85,18 +86,9 @@ class Index:
         version = hashlib.sha1(json.dumps([texts, self.gemini.embed_model or ""]).encode()).hexdigest()[:12]
         vectors = None
         if use_embeddings and self.gemini.enabled:
-            vectors = self._load_vectors(version)
-            if vectors is None:
-                try:
-                    flat = [t for lang in VEC_LANGS for t in texts[lang]]
-                    v = np.array(self.gemini.embed(flat), dtype=np.float32)
-                    v /= np.linalg.norm(v, axis=1, keepdims=True) + 1e-9
-                    vectors = v.reshape(len(VEC_LANGS), len(docs), -1)  # [language, doc, dim]
-                    VEC_PATH.parent.mkdir(parents=True, exist_ok=True)
-                    np.savez(VEC_PATH, v=vectors, version=version)
-                except Exception as e:  # noqa: BLE001
-                    print("[rag] embeddings unavailable, keyword search only:", e)
-                    vectors = None
+            vectors = self._embed_cached([t for lang in VEC_LANGS for t in texts[lang]])
+            if vectors is not None:
+                vectors = vectors.reshape(len(VEC_LANGS), len(docs), -1)  # [language, doc, dim]
         with self.lock:
             self.docs, self.tf, self.df, self.lens = docs, tf, df, lens
             self.avg = sum(lens) / max(len(lens), 1)
@@ -104,12 +96,52 @@ class Index:
             self.version = version
         return len(docs)
 
-    def _load_vectors(self, version):
+    def _embed_cached(self, flat: list[str]):
+        """Vectors for every text, embedding only texts not in the cache.
+
+        The cache (data/vectors.npz, kept in git) is keyed by model + text, so an edit
+        re-embeds just the changed records and a fresh server starts with no API calls.
+        Texts that cannot be embedded (quota) get a zero vector and rely on keywords.
+        """
+        model = self.gemini.embed_model or ""
+        keys = [hashlib.sha1(f"{model}|{t}".encode()).hexdigest()[:16] for t in flat]
+        cache: dict[str, np.ndarray] = {}
         if VEC_PATH.exists():
-            z = np.load(VEC_PATH)
-            if str(z["version"]) == version and z["v"].ndim == 3:
-                return z["v"]
-        return None
+            try:
+                z = np.load(VEC_PATH)
+                if "keys" in z:
+                    cache = dict(zip(z["keys"].tolist(), z["v"]))
+            except Exception as e:  # noqa: BLE001
+                print("[rag] vector cache unreadable, rebuilding:", e)
+        missing = [i for i, k in enumerate(keys) if k not in cache]
+        if missing:
+            print(f"[rag] embedding {len(missing)} new or changed texts ({len(flat) - len(missing)} cached)")
+            for start in range(0, len(missing), 50):
+                chunk = missing[start:start + 50]
+                vecs = None
+                for attempt in range(3):
+                    try:
+                        vecs = self.gemini.embed([flat[i] for i in chunk])
+                        break
+                    except Exception as e:  # noqa: BLE001
+                        if "429" in str(e) and attempt < 2:
+                            time.sleep(30 * (attempt + 1))  # free tier: per-minute limit
+                            continue
+                        print("[rag] embeddings unavailable for some texts, keywords cover them:", str(e)[:160])
+                        break
+                if vecs is None:
+                    break
+                for i, v in zip(chunk, vecs):
+                    v = np.asarray(v, dtype=np.float32)
+                    cache[keys[i]] = v / (np.linalg.norm(v) + 1e-9)
+            used = {k: cache[k] for k in keys if k in cache}
+            if used:
+                VEC_PATH.parent.mkdir(parents=True, exist_ok=True)
+                np.savez(VEC_PATH, keys=np.array(list(used)), v=np.stack(list(used.values())))
+        if not any(k in cache for k in keys):
+            return None
+        dim = len(next(cache[k] for k in keys if k in cache))
+        return np.stack([cache.get(k, np.zeros(dim, dtype=np.float32)) for k in keys])
 
     def bm25(self, query: str, k=12):
         q = tokens(query)

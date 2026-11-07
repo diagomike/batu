@@ -69,7 +69,7 @@ def documents() -> list[dict]:
     kb = content.kebeles()
     add("kebeles", "kebele", "Kebeles of Batu", "/kebele", [kb["note"]] + [
         f"{k['name']}: {k['area']}. Landmarks: {', '.join(k['landmarks'])}. Waste collection day: {k['waste_day']} (sample)."
-        for k in kb["kebeles"]], sample=True)
+        for k in kb["kebeles"]], sample=True, record={"note": kb["note"], "k": kb["kebeles"]})
 
     for p in content.discover()["places"]:
         add(f"place:{p['id']}", "place", p["title"], f"/discover/{p['id']}", [
@@ -78,12 +78,12 @@ def documents() -> list[dict]:
         ], record={k: p[k] for k in ("summary", "body", "facts")})
     d = content.discover()
     add("day-trips", "place", "Day trips from Batu", "/discover#day-trips",
-        [f"{t['title']} ({t['distance']}): {t['text']}" for t in d["day_trips"]])
+        [f"{t['title']} ({t['distance']}): {t['text']}" for t in d["day_trips"]], record=d["day_trips"])
     add("stays", "place", "Where to stay in Batu", "/discover#stay",
-        [f"{s['name']}, {s['where']}: {s['text']}" for s in d["stays"]], sample=True)
+        [f"{s['name']}, {s['where']}: {s['text']}" for s in d["stays"]], sample=True, record=d["stays"])
     add("events", "event", "Festivals and events calendar", "/discover#events",
-        [f"{e['date']}: {e['title']} at {e['where']}" for e in d["events"]])
-    add("getting-here", "place", "Getting to Batu", "/discover#getting-here", [d["getting_here"]])
+        [f"{e['date']}: {e['title']} at {e['where']}" for e in d["events"]], record=d["events"])
+    add("getting-here", "place", "Getting to Batu", "/discover#getting-here", [d["getting_here"]], record={"g": d["getting_here"]})
 
     for i, f in enumerate(site["facts"]):
         add(f"fact:{i}", "fact", f["q"], "/about", [f["q"], f["a"]], record={"a": f["a"]})

@@ -33,7 +33,7 @@ OUT_OF_SCOPE = re.compile(
 PII = re.compile(r"(\+?\d[\d\s-]{7,}\d)")
 
 # Terms whose official wording the answer must reuse (taken from the site's translation files).
-GLOSSARY_TERMS = ["Batu", "Services", "kebele", "City government", "Batu City Administration", "Emergency numbers",
+GLOSSARY_TERMS = ["Batu", "Discover Batu", "Services", "kebele", "City government", "Batu City Administration", "Emergency numbers",
                   "Invest", "Ask Batu", "Fee", "Office", "Steps", "Free", "Mayor's Office", "Pay a fee", "Track a request",
                   "Report a problem", "Book a boat trip", "resident ID"]
 EXTRA_GLOSSARY = {"om": {"Lake Ziway": "Haroo Dambal", "kebeles": "gandoota", "Emergency": "Gargaarsa Atattamaa",
