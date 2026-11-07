@@ -257,8 +257,9 @@ _hits: dict[str, deque] = defaultdict(deque)
 
 @app.post("/api/ask")
 async def api_ask(request: Request):
-    # Behind a proxy (Render, Plesk) the visitor's address is the first X-Forwarded-For entry.
-    fwd = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+    # Behind Render's proxy the visitor's address is the LAST X-Forwarded-For entry (added by the
+    # proxy); earlier entries come from the client and could be faked to dodge the limit.
+    fwd = request.headers.get("x-forwarded-for", "").split(",")[-1].strip()
     ip = fwd or (request.client.host if request.client else "?")
     now = time.time()
     dq = _hits[ip]
@@ -281,7 +282,8 @@ async def api_ask(request: Request):
 
 @app.get("/api/health")
 def api_health():
-    return {"ok": True, "docs": len(INDEX.docs), "gemini": INDEX.gemini.enabled, "model": INDEX.gemini.gen_model}
+    return {"ok": True, "docs": len(INDEX.docs), "gemini": INDEX.gemini.enabled, "model": INDEX.gemini.gen_model,
+            "version": os.getenv("RENDER_GIT_COMMIT", "")[:7] or "local"}
 
 
 # ---------- report a problem ----------
@@ -408,14 +410,16 @@ def set_lang(code: str, back: str = "/"):
 
 
 # ---------- admin: Batu Studio (app/studio.py) ----------
-from . import studio  # noqa: E402
+# The studio is developed on the `platform` branch for the final batu.gov.et deployment.
+# On main (static site + public assistant API) it stays off unless STUDIO=1 is set locally.
+if os.getenv("STUDIO") == "1":
+    from . import studio  # noqa: E402
 
-app.include_router(studio.router)
+    app.include_router(studio.router)
 
-
-@app.exception_handler(studio.NeedLogin)
-async def _studio_login(request: Request, exc):
-    return RedirectResponse("/admin?err=Please+sign+in.", status_code=303)
+    @app.exception_handler(studio.NeedLogin)
+    async def _studio_login(request: Request, exc):
+        return RedirectResponse("/admin?err=Please+sign+in.", status_code=303)
 
 
 # /om/..., /am/..., /en/...: language in the address, same as the static build (app/langurls.py)

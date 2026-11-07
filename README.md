@@ -12,7 +12,9 @@ copy .env.example .env      # then add GEMINI_API_KEY (free) and an ADMIN_TOKEN
 python -m uvicorn app.main:app --reload --port 8000
 ```
 
-Open http://localhost:8000. Staff desk: http://localhost:8000/admin (token from `.env`, default `batu-demo-admin`).
+Open http://localhost:8000.
+
+**Branches.** `main` is the public demo: the static GitHub Pages site plus the assistant API on Render. The staff studio and the database stack for the final batu.gov.et deployment are built on the `platform` branch. On `main` the studio is off unless you start the app with `STUDIO=1`.
 
 ## Static preview (GitHub Pages)
 
@@ -70,7 +72,7 @@ Set `GOOGLE_TRANSLATE_API_KEY` to use the official Cloud Translation API. The si
    - the last two exchanges go along, so follow-ups ("how long does it take?") work;
    - with no key, on an API error, or after `ASK_DAILY_LIMIT` AI answers in a day → the best matching record is quoted directly.
 4. Model choice saves tokens: the newest Flash-Lite answers, a full Flash model steps in only when Lite is rate limited. Pin models with `GEMINI_MODEL` (comma-separated).
-5. Questions are logged with phone and ID numbers removed (`/admin#asks`). `/assistant` is the public "how it works" page.
+5. Questions are logged with phone and ID numbers removed (the studio's assistant log on the `platform` branch). `/assistant` is the public "how it works" page.
 
 ### Assistant API for the static site (Render)
 
