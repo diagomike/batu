@@ -29,7 +29,7 @@
   document.querySelectorAll("[data-imgpick]").forEach(function (sel) {
     var img = sel.parentElement.querySelector("[data-preview]");
     sel.addEventListener("change", function () {
-      if (sel.value) { img.src = "/static/img/" + sel.value + "-800.jpg"; img.hidden = false; } else img.hidden = true;
+      if (sel.value) { img.src = "/media/" + sel.value + "-800.jpg"; img.hidden = false; } else img.hidden = true;
     });
   });
 
@@ -68,7 +68,4 @@
   }
   var tr = document.querySelector("[data-trstatus]");
   if (tr && tr.querySelector("button[disabled]")) poll("/admin/translations/status", tr, function () { location.reload(); });
-  var pub = document.querySelector("[data-pubstatus]");
-  var pubBtn = document.querySelector("[data-pubform] button[disabled]");
-  if (pub && pubBtn) poll("/admin/publish/status", pub, function () { location.reload(); });
 })();

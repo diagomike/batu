@@ -1,7 +1,7 @@
 {% extends "studio/base.html" %}
 {% block title %}History{% endblock %}
 {% block main %}
-<div class="head"><div><p class="eyebrow">System · var/history</p><h1>History</h1>
+<div class="head"><div><p class="eyebrow">System · history</p><h1>History</h1>
 <p class="muted">Every save keeps the version it replaced (the last 50 per file). Restoring is itself saved, so it can be undone too.</p></div></div>
 <nav class="tabs">{% for f, label in files.items() %}<a href="?file={{ f }}" class="{{ 'on' if f == file }}">{{ label }}</a>{% endfor %}</nav>
 <div class="panel"><table class="t">

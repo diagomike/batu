@@ -1,73 +1,21 @@
-"""SQLite storage for requests, payments, pushed news and the assistant log."""
+"""Requests, payments, sign-ups, the assistant log and residents' photos.
+
+Stored through app/database.py: PostgreSQL in production (DATABASE_URL), SQLite at DB_PATH
+otherwise. The function names and the shapes they return are the same as before the move to
+SQLAlchemy, so pages, the studio and the assistant did not have to change.
+"""
 from __future__ import annotations
 
 import datetime as dt
-import json
 import secrets
-import sqlite3
 import threading
-from pathlib import Path
+
+from sqlalchemy import delete, func, insert, select, update
 
 from . import content
+from . import database as D
 
-DB_PATH = content.ROOT / "var" / "batu.db"
-_lock = threading.Lock()
-
-SCHEMA = """
-create table if not exists requests (
-  ref text primary key,
-  kind text not null,            -- report, complaint, booking, application, visit, bill
-  service_id text,
-  title text,
-  data text not null,            -- json
-  status text not null,
-  amount real,
-  paid integer not null default 0,
-  created text not null,
-  updated text not null,
-  history text not null          -- json list of {at, status, note}
-);
-create table if not exists payments (
-  id text primary key,
-  request_ref text not null,
-  amount real not null,
-  provider text not null,
-  status text not null,          -- pending, paid, failed
-  created text not null,
-  receipt text
-);
-create table if not exists news (
-  id text primary key,
-  date text not null,
-  category text,
-  title text not null,
-  summary text,
-  body text,
-  source text,
-  url text,
-  image text,
-  kind text not null default 'news',   -- news or notice
-  sample integer not null default 0,
-  created_via text not null default 'seed'
-);
-create table if not exists ask_log (
-  id integer primary key autoincrement,
-  at text not null,
-  lang text,
-  question text,
-  mode text,
-  found integer,
-  sources text,
-  ms integer
-);
-create table if not exists subscriptions (
-  id integer primary key autoincrement,
-  at text not null,
-  channel text not null,
-  contact text not null,
-  topics text
-);
-"""
+DB_PATH = content.ROOT / "var" / "batu.db"  # SQLite file when DATABASE_URL is not set
 
 STATUS_LABELS = {
     "received": "Received",
@@ -87,36 +35,29 @@ def now() -> str:
     return dt.datetime.now().replace(microsecond=0).isoformat()
 
 
-def connect():
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    con = sqlite3.connect(DB_PATH, check_same_thread=False)
-    con.row_factory = sqlite3.Row
-    return con
-
-
-_con = None
+_ready = False
+_ready_lock = threading.Lock()
 
 
 def con():
-    global _con
-    if _con is None:
-        _con = connect()
-        _con.executescript(SCHEMA)
-        _seed()
-    return _con
+    """Make sure the database is migrated and seeded; returns the engine."""
+    global _ready
+    with _ready_lock:
+        if not _ready:
+            D.migrate()
+            _seed()
+            _ready = True
+    return D.engine()
 
 
 def _seed():
-    c = _con
-    # News and notices now live in data/news.json; move anything pushed into the old table there.
     from . import store
-    moved = store.migrate_db_news(c)
-    if moved:
-        print(f"[db] moved {moved} news items from SQLite to data/news.json")
+    store.sync_from_files()
     # A sample bill so the payment flow can be tried end to end.
-    _insert_request("LL-BTU-0001", "bill", "land-lease-payment", "Land lease instalment 2019 E.C. (sample bill)",
-                    {"holder": "Sample land holder", "plot": "Plot B-114 (sample)"}, "awaiting_payment", 4200)
-    c.commit()
+    with D.engine().begin() as c:
+        if not c.execute(select(D.requests.c.ref).where(D.requests.c.ref == "LL-BTU-0001")).first():
+            _insert_request(c, "LL-BTU-0001", "bill", "land-lease-payment", "Land lease instalment 2019 E.C. (sample bill)",
+                            {"holder": "Sample land holder", "plot": "Plot B-114 (sample)"}, "awaiting_payment", 4200)
 
 
 def new_ref(prefix: str) -> str:
@@ -124,33 +65,43 @@ def new_ref(prefix: str) -> str:
     return f"BTU-{prefix}-{stamp}-{secrets.token_hex(2).upper()}"
 
 
-def _insert_request(ref, kind, service_id, title, data, status, amount=None):
+def _insert_request(c, ref, kind, service_id, title, data, status, amount=None):
     t = now()
     history = [{"at": t, "status": status, "note": "Request received" if status != "awaiting_payment" else "Bill issued"}]
-    _con.execute(
-        "insert or ignore into requests(ref,kind,service_id,title,data,status,amount,paid,created,updated,history) values(?,?,?,?,?,?,?,?,?,?,?)",
-        (ref, kind, service_id, title, json.dumps(data, ensure_ascii=False), status, amount, 0, t, t, json.dumps(history)),
-    )
+    c.execute(insert(D.requests).values(ref=ref, kind=kind, service_id=service_id, title=title, data=data, status=status,
+                                        amount=amount, paid=False, created=t, updated=t, history=history))
 
 
 def create_request(kind: str, prefix: str, service_id: str | None, title: str, data: dict, amount: float | None = None) -> str:
-    ref = new_ref(prefix)
+    con()
     status = "awaiting_payment" if amount else "received"
-    with _lock:
-        _insert_request(ref, kind, service_id, title, data, status, amount)
-        con().commit()
-    return ref
+    for _ in range(6):
+        ref = new_ref(prefix)
+        with D.engine().begin() as c:
+            if c.execute(select(D.requests.c.ref).where(D.requests.c.ref == ref)).first():
+                continue  # reference taken this month; draw another
+            _insert_request(c, ref, kind, service_id, title, data, status, amount)
+            return ref
+    raise RuntimeError("could not find a free reference number")
+
+
+def _row(r) -> dict:
+    d = dict(r._mapping)
+    d["paid"] = 1 if d.get("paid") else 0
+    d["status_label"] = STATUS_LABELS.get(d["status"], d["status"])
+    return d
 
 
 def get_request(ref: str):
-    row = con().execute("select * from requests where upper(ref)=upper(?)", (ref.strip(),)).fetchone()
-    if not row:
+    con()
+    with D.engine().connect() as c:
+        r = c.execute(select(D.requests).where(func.upper(D.requests.c.ref) == (ref or "").strip().upper())).first()
+    if not r:
         return None
-    r = dict(row)
-    r["data"] = json.loads(r["data"])
-    r["history"] = json.loads(r["history"])
-    r["status_label"] = STATUS_LABELS.get(r["status"], r["status"])
-    return r
+    d = _row(r)
+    d["data"] = d["data"] or {}
+    d["history"] = d["history"] or []
+    return d
 
 
 def set_status(ref: str, status: str, note: str = ""):
@@ -158,29 +109,34 @@ def set_status(ref: str, status: str, note: str = ""):
     if not r:
         return False
     hist = r["history"] + [{"at": now(), "status": status, "note": note or STATUS_LABELS.get(status, status)}]
-    with _lock:
-        con().execute("update requests set status=?, updated=?, history=? where ref=?", (status, now(), json.dumps(hist), r["ref"]))
-        con().commit()
+    with D.engine().begin() as c:
+        c.execute(update(D.requests).where(D.requests.c.ref == r["ref"]).values(status=status, updated=now(), history=hist))
     return True
 
 
 def list_requests(limit=100):
-    rows = con().execute("select ref,kind,title,status,amount,paid,created from requests order by created desc limit ?", (limit,)).fetchall()
-    return [dict(r) | {"status_label": STATUS_LABELS.get(r["status"], r["status"])} for r in rows]
+    con()
+    t = D.requests.c
+    with D.engine().connect() as c:
+        rows = c.execute(select(t.ref, t.kind, t.title, t.status, t.amount, t.paid, t.created)
+                         .order_by(t.created.desc()).limit(limit)).all()
+    return [_row(r) for r in rows]
 
 
 def create_payment(request_ref: str, amount: float, provider: str) -> str:
+    con()
     pid = "PAY-" + secrets.token_hex(4).upper()
-    with _lock:
-        con().execute("insert into payments(id,request_ref,amount,provider,status,created) values(?,?,?,?,?,?)",
-                      (pid, request_ref, amount, provider, "pending", now()))
-        con().commit()
+    with D.engine().begin() as c:
+        c.execute(insert(D.payments).values(id=pid, request_ref=request_ref, amount=amount, provider=provider,
+                                            status="pending", created=now()))
     return pid
 
 
 def get_payment(pid: str):
-    row = con().execute("select * from payments where id=?", (pid,)).fetchone()
-    return dict(row) if row else None
+    con()
+    with D.engine().connect() as c:
+        r = c.execute(select(D.payments).where(D.payments.c.id == pid)).first()
+    return dict(r._mapping) if r else None
 
 
 def complete_payment(pid: str) -> str | None:
@@ -188,10 +144,9 @@ def complete_payment(pid: str) -> str | None:
     if not p or p["status"] == "paid":
         return p and p["receipt"]
     receipt = "RCT-" + secrets.token_hex(4).upper()
-    with _lock:
-        con().execute("update payments set status='paid', receipt=? where id=?", (receipt, pid))
-        con().execute("update requests set paid=1 where ref=?", (p["request_ref"],))
-        con().commit()
+    with D.engine().begin() as c:
+        c.execute(update(D.payments).where(D.payments.c.id == pid).values(status="paid", receipt=receipt))
+        c.execute(update(D.requests).where(D.requests.c.ref == p["request_ref"]).values(paid=True))
     r = get_request(p["request_ref"])
     if r:
         next_status = "scheduled" if r["kind"] == "booking" else ("closed" if r["kind"] == "bill" else "in_review")
@@ -200,7 +155,13 @@ def complete_payment(pid: str) -> str | None:
     return receipt
 
 
-# News and notices: kept here under their old names for existing callers; the data is in data/news.json.
+def list_payments(limit=200):
+    con()
+    with D.engine().connect() as c:
+        return [dict(r._mapping) for r in c.execute(select(D.payments).order_by(D.payments.c.created.desc()).limit(limit))]
+
+
+# ---------- news and notices: kept under their old names; the data is a content document ----------
 def list_news(kind="news", limit=50):
     from . import store
     return store.list_news(kind, limit)
@@ -221,32 +182,59 @@ def delete_news(nid: str):
     store.delete_news(nid)
 
 
-def list_payments(limit=200):
-    return [dict(r) for r in con().execute("select * from payments order by created desc limit ?", (limit,)).fetchall()]
-
-
-def list_subscriptions(limit=500):
-    return [dict(r) for r in con().execute("select * from subscriptions order by id desc limit ?", (limit,)).fetchall()]
-
-
-def delete_subscription(sid: int):
-    with _lock:
-        con().execute("delete from subscriptions where id=?", (sid,))
-        con().commit()
-
-
+# ---------- assistant log ----------
 def log_ask(lang, question, mode, found, sources, ms):
-    with _lock:
-        con().execute("insert into ask_log(at,lang,question,mode,found,sources,ms) values(?,?,?,?,?,?,?)",
-                      (now(), lang, question, mode, 1 if found else 0, json.dumps(sources), ms))
-        con().commit()
+    con()
+    with D.engine().begin() as c:
+        c.execute(insert(D.ask_log).values(at=now(), lang=lang, question=question, mode=mode, found=bool(found),
+                                           sources=list(sources or []), ms=ms))
 
 
 def recent_asks(limit=30):
-    return [dict(r) for r in con().execute("select * from ask_log order by id desc limit ?", (limit,)).fetchall()]
+    con()
+    with D.engine().connect() as c:
+        rows = c.execute(select(D.ask_log).order_by(D.ask_log.c.id.desc()).limit(limit)).all()
+    return [dict(r._mapping) | {"found": 1 if r.found else 0} for r in rows]
 
 
+def asks_since(since_iso: str, mode: str | None = None) -> int:
+    """How many questions since a time (optionally of one mode), e.g. for a daily AI limit."""
+    con()
+    q = select(func.count()).select_from(D.ask_log).where(D.ask_log.c.at >= since_iso)
+    if mode:
+        q = q.where(D.ask_log.c.mode == mode)
+    with D.engine().connect() as c:
+        return c.execute(q).scalar_one()
+
+
+# ---------- notice sign-ups ----------
 def add_subscription(channel, contact, topics):
-    with _lock:
-        con().execute("insert into subscriptions(at,channel,contact,topics) values(?,?,?,?)", (now(), channel, contact, topics))
-        con().commit()
+    con()
+    with D.engine().begin() as c:
+        c.execute(insert(D.subscriptions).values(at=now(), channel=channel, contact=contact, topics=topics))
+
+
+def list_subscriptions(limit=500):
+    con()
+    with D.engine().connect() as c:
+        rows = c.execute(select(D.subscriptions).order_by(D.subscriptions.c.id.desc()).limit(limit)).all()
+    return [dict(r._mapping) for r in rows]
+
+
+def delete_subscription(sid: int):
+    with D.engine().begin() as c:
+        c.execute(delete(D.subscriptions).where(D.subscriptions.c.id == sid))
+
+
+# ---------- photos residents attach to reports ----------
+def save_upload(name: str, data: bytes, content_type: str):
+    con()
+    with D.engine().begin() as c:
+        c.execute(insert(D.uploads).values(name=name, data=data, content_type=content_type, created=now()))
+
+
+def get_upload(name: str):
+    con()
+    with D.engine().connect() as c:
+        r = c.execute(select(D.uploads).where(D.uploads.c.name == name)).first()
+    return dict(r._mapping) if r else None

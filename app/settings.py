@@ -1,8 +1,8 @@
-"""Studio-managed settings that are not content: for now, the Gemini API key.
+"""Studio-managed settings that are not content, kept in the database (table "settings").
 
-Which key the assistant uses, in order:
-  1. the key saved in the studio (var/studio_settings.json, never committed),
-  2. GEMINI_API_KEY from portal/.env,
+The Gemini API key: which one the assistant uses, in order,
+  1. the key saved in the studio (database, never in the code),
+  2. GEMINI_API_KEY from the environment or portal/.env,
   3. no key: the assistant quotes the city's records instead of writing answers.
 A key is only used if Google accepts it; a rejected key falls through to the next one.
 `gemini_keys()` gives the same order to any code that wants to fail over per request.
@@ -10,41 +10,69 @@ A key is only used if Google accepts it; a rejected key falls through to the nex
 from __future__ import annotations
 
 import datetime as dt
-import json
 import os
 import threading
 
+from sqlalchemy import delete, insert, select, update
+
 from . import content
 
-FILE = content.ROOT / "var" / "studio_settings.json"
 _ENV_AT_START = os.environ.get("GEMINI_API_KEY", "")
 _lock = threading.Lock()
 state = {"active": None, "checked": None, "results": {}}
 
 
-def _read() -> dict:
-    return json.loads(FILE.read_text(encoding="utf8")) if FILE.exists() else {}
+# ---------- key-value settings ----------
+def _engine():
+    from . import db
+    db.con()
+    from . import database as D
+    return D.engine()
 
 
-def _write(d: dict):
-    FILE.parent.mkdir(parents=True, exist_ok=True)
-    tmp = FILE.with_suffix(".tmp")
-    tmp.write_text(json.dumps(d, indent=2), encoding="utf8")
-    os.replace(tmp, FILE)
+def get(key: str, default: str = "") -> str:
+    from . import database as D
+    with _engine().connect() as c:
+        r = c.execute(select(D.settings.c.value).where(D.settings.c.key == key)).first()
+    return r.value if r else default
 
 
+def put(key: str, value: str | None, who: str = "") -> None:
+    """Save a setting; None removes it."""
+    from . import database as D
+    t = dt.datetime.now().isoformat(timespec="seconds")
+    with _engine().begin() as c:
+        if value is None:
+            c.execute(delete(D.settings).where(D.settings.c.key == key))
+            return
+        n = c.execute(update(D.settings).where(D.settings.c.key == key)
+                      .values(value=value, updated_at=t, updated_by=who)).rowcount
+        if not n:
+            c.execute(insert(D.settings).values(key=key, value=value, updated_at=t, updated_by=who))
+
+
+def meta_of(key: str) -> dict:
+    from . import database as D
+    with _engine().connect() as c:
+        r = c.execute(select(D.settings).where(D.settings.c.key == key)).first()
+    return {"updated_by": r.updated_by, "updated_at": r.updated_at} if r else {}
+
+
+# ---------- Gemini key ----------
 def env_key() -> str:
-    """GEMINI_API_KEY as written in portal/.env (falls back to the environment at start-up)."""
+    """GEMINI_API_KEY from portal/.env, or from the environment at start-up (container hosts)."""
     p = content.ROOT / ".env"
     if p.exists():
         for line in p.read_text(encoding="utf8").splitlines():
             if line.strip().startswith("GEMINI_API_KEY=") and not line.strip().startswith("#"):
-                return line.split("=", 1)[1].strip()
+                v = line.split("=", 1)[1].strip()
+                if v:
+                    return v
     return _ENV_AT_START.strip()
 
 
 def studio_key() -> str:
-    return _read().get("gemini_api_key", "").strip()
+    return get("gemini_api_key").strip()
 
 
 def gemini_keys() -> list[tuple[str, str]]:
@@ -61,18 +89,12 @@ def mask(key: str) -> str:
 
 
 def set_studio_key(key: str, who: str):
-    d = _read()
-    if key:
-        d.update(gemini_api_key=key.strip(), updated_by=who, updated_at=dt.datetime.now().isoformat(timespec="seconds"))
-    else:
-        d.pop("gemini_api_key", None)
-        d.update(updated_by=who, updated_at=dt.datetime.now().isoformat(timespec="seconds"))
-    _write(d)
+    put("gemini_api_key", key.strip() if key else None, who)
+    put("gemini_api_key_changed", dt.datetime.now().isoformat(timespec="seconds"), who)
 
 
 def meta() -> dict:
-    d = _read()
-    return {"updated_by": d.get("updated_by"), "updated_at": d.get("updated_at")}
+    return meta_of("gemini_api_key_changed")
 
 
 def check(key: str) -> dict:

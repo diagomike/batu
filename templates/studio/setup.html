@@ -5,15 +5,24 @@
   <p class="eyebrow">Batu Studio · first run</p>
   <h1>Create the first administrator</h1>
   {% if local %}
-  <p class="muted">This account can add other staff, edit every page and publish the site. Use a password of at least 10 characters that you do not use anywhere else.</p>
+  <p class="muted">This account can add other staff, edit every page and manage the AI key and backups. Use a password of at least 10 characters that you do not use anywhere else.</p>
   <form method="post" action="/admin/setup" class="form">
     <label>Username<input name="name" required autocomplete="username" pattern="[a-zA-Z0-9._\-]{2,32}"></label>
     <label>Password<input name="password" type="password" required minlength="10" autocomplete="new-password"></label>
     <label>Repeat password<input name="password2" type="password" required minlength="10" autocomplete="new-password"></label>
     <button class="btn gold">Create account</button>
   </form>
+  {% elif token_set %}
+  <p class="muted">Enter the setup token from the server's environment settings (STUDIO_SETUP_TOKEN), then choose the first administrator's name and password.</p>
+  <form method="post" action="/admin/setup" class="form">
+    <label>Setup token<input name="token" type="password" required autocomplete="off"></label>
+    <label>Username<input name="name" required autocomplete="username" pattern="[a-zA-Z0-9._\-]{2,32}"></label>
+    <label>Password<input name="password" type="password" required minlength="10" autocomplete="new-password"></label>
+    <label>Repeat password<input name="password2" type="password" required minlength="10" autocomplete="new-password"></label>
+    <button class="btn gold">Create account</button>
+  </form>
   {% else %}
-  <p>The first account can only be created on the studio computer itself. Open <span class="mono">http://localhost:8000/admin</span> there, or run <span class="mono">python tools/studio_user.py add &lt;name&gt; --admin</span>.</p>
+  <p>Set <span class="mono">STUDIO_SETUP_TOKEN</span> (16+ random characters) in the server's environment and reload this page, or open the studio on the server itself.</p>
   {% endif %}
 </div>
 {% endblock %}

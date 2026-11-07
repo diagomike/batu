@@ -25,7 +25,7 @@
   <nav class="side" aria-label="Studio">
     <div class="sec">Workspace</div>
     <a href="/admin" class="{{ 'on' if request.url.path in ['/admin', '/admin/'] }}">Overview</a>
-    <a href="/admin/requests" class="{{ 'on' if request.url.path.startswith('/admin/requests') }}">Requests{% if remote %} <span class="tagm">live</span>{% endif %}</a>
+    <a href="/admin/requests" class="{{ 'on' if request.url.path.startswith('/admin/requests') }}">Requests</a>
     {% for g in groups %}
     <div class="sec">{{ g }}</div>
     {% for kind, name, title, n in nav[g] %}<a href="/admin/{{ kind }}/{{ name }}" class="{{ 'on' if request.url.path.startswith('/admin/' ~ kind ~ '/' ~ name) and (request.url.path == '/admin/' ~ kind ~ '/' ~ name or request.url.path.startswith('/admin/' ~ kind ~ '/' ~ name ~ '/')) }}">{{ title }}{% if n is not none %}<span class="ct">{{ n }}</span>{% endif %}</a>{% endfor %}
@@ -41,7 +41,7 @@
     <a href="/admin/history" class="{{ 'on' if request.url.path.startswith('/admin/history') }}">History</a>
     {% if user.role == 'admin' %}<a href="/admin/users" class="{{ 'on' if request.url.path.startswith('/admin/users') }}">Users</a>
     <a href="/admin/settings" class="{{ 'on' if request.url.path.startswith('/admin/settings') }}">AI assistant</a>
-    <a href="/admin/publish" class="pub {{ 'on' if request.url.path.startswith('/admin/publish') }}">Publish ↑</a>{% endif %}
+    <a href="/admin/backup" class="{{ 'on' if request.url.path.startswith('/admin/backup') }}">Backup{% if store_conflicts %} <span class="tagm">{{ store_conflicts }}</span>{% endif %}</a>{% endif %}
   </nav>
   <main class="main">
     {% if flash %}<div class="msg ok" role="status">{{ flash }}</div>{% endif %}

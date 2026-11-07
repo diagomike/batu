@@ -1,129 +1,120 @@
-# Putting batu.gov.et online (Plesk "Linux Bronze")
+# Running batu.gov.et
 
-The public site is plain files: every page in English, Afaan Oromoo and Amharic, plus a
-small set of PHP services for the things residents send in (reports, complaints,
-applications, bookings, sign-ups) and for tracking and payment. Staff edit everything in
-**Batu Studio** on an office computer and press **Publish**.
+One Python service (FastAPI) serves everything: the public site in English, Afaan Oromoo
+and Amharic, the forms, tracking and payments, the "Ask Batu" assistant, and **Batu Studio**,
+the staff side at `/admin`. Everything it stores lives in one database: PostgreSQL in
+production, a SQLite file on a laptop.
 
 ```
-office computer                                   Plesk host (batu.gov.et)
-┌──────────────────────────┐   Publish (FTPS)    ┌─────────────────────────────────┐
-│ Batu Studio /admin       │ ─────────────────▶  │ httpdocs/  static pages, photos │
-│ edits data/*.json        │                     │ httpdocs/api/*.php  forms, pay, │
-│ builds dist/httpdocs     │ ◀── requests ─────  │   tracking, admin API           │
-│ (python tools/build.py)  │   (admin API)       │ private/  database, uploads     │
-└──────────────────────────┘                     └─────────────────────────────────┘
+                 ┌──────────────────────────── container (Dockerfile) ───────────────────────────┐
+ residents ───▶  │ public pages /, /om/, /am/   forms /report /book /pay /track   /api/ask        │
+ staff ───────▶  │ Batu Studio /admin: content, photos, translations, requests, users, AI key    │
+                 └───────────────────────────────────────┬───────────────────────────────────────┘
+                                                         │ DATABASE_URL
+                                     ┌───────────────────▼──────────────────────┐
+                                     │ PostgreSQL                               │
+                                     │ requests, payments, sign-ups, ask log,   │
+                                     │ content + history, photos, staff, keys   │
+                                     └──────────────────────────────────────────┘
 ```
 
-## What the plan gives you, and what the site uses
+Studio edits go live as soon as they are saved, and they survive redeploys because they are
+in the database. The JSON files in `data/` are the starting content (see "Content" below).
 
-| Plan | Site |
-|---|---|
-| 5 GB storage | About 15 MB of files today; photos are the bulk (7.4 MB). |
-| 50 GB bandwidth a month | A first visit to the home page loads about 1.2 MB (2–2.5 MB if someone scrolls the whole page). Photos, fonts and scripts are then cached for a week. That is roughly **20,000–40,000 first visits a month**. If traffic grows past that, upgrade the plan or put the site behind a free CDN. |
-| 1 database | Optional. The PHP services use SQLite (a single file) by default; switch to MySQL in `config.php` if you prefer. |
-| Free SSL | Turn on Let's Encrypt (step 2). |
+## Recommended host: Render
 
-## One-time setup in Plesk
+Render already runs this repository as `batu-ask` (the assistant behind the GitHub Pages
+preview), so the city site can grow from it. You get the web service plus managed PostgreSQL
+with daily backups, free TLS for `batu.gov.et`, and deploys on every push. Railway and Fly.io
+work the same way with the Dockerfile; see "Other hosts".
 
-1. **PHP.** *Websites & Domains → batu.gov.et → PHP Settings*: PHP 8.1 or newer (7.4 works),
-   served by **FPM application served by Apache**. Keep *Hosting Settings → Proxy mode* on
-   (the default), so the `.htaccess` rules work.
-2. **SSL.** *SSL/TLS Certificates → Let's Encrypt*: tick the domain and `www`, then turn on
-   *Redirect from HTTP to HTTPS* in *Hosting Settings*.
-3. **Private folder.** In *Files*, create `private/` next to `httpdocs/` (not inside it).
-   The database file and residents' photos go there, out of reach of the web.
-4. **First upload.** Either
-   - in the studio: *Publish* without upload, then upload `dist/batu-site-<date>.zip` in
-     *Files → httpdocs → Upload*, and *Extract*; or
-   - from the studio with FTPS (see "Publishing from the studio" below).
-5. **Settings.** In *Files → httpdocs/api*, copy `config.sample.php` to `config.php` and edit:
-   - `admin_token`: a long random value (24+ characters). The studio needs the same value.
-   - `payments`: leave `'off'` until Telebirr is connected. `'demo'` shows a test checkout
-     where no money moves. Use it only for trials, because it marks bills as paid.
-   - For MySQL: *Databases → Add Database*, then set `'db' => 'mysql'` and the DSN, user and
-     password. Otherwise leave SQLite.
+### Steps
 
-   `config.php` is never part of a build, so publishing never overwrites it.
-6. **Check.** Open https://batu.gov.et/ and run the checklist at the end.
+1. **Database.** Create a PostgreSQL database in the Render dashboard (*New → PostgreSQL*,
+   region Frankfurt, plan **Basic 256 MB**, about $6/month; the free plan is deleted after
+   30 days). Alternatively, uncomment the `databases` block and the `DATABASE_URL` lines in
+   `render.yaml`, and the next blueprint sync creates and connects it.
+2. **Connect it.** In the `batu-ask` service, under *Environment*, set `DATABASE_URL` to the
+   database's *Internal Database URL*. The app creates its tables on first start (Alembic
+   migrations run automatically) and loads the content from `data/`.
+3. **Secrets** (*Environment*). `render.yaml` already generates `SECRET_KEY`,
+   `STUDIO_SETUP_TOKEN` and `ADMIN_TOKEN`. Add `GEMINI_API_KEY`, or set the key later in the
+   studio. Set `ALLOWED_ORIGINS` to every site that calls the assistant from a browser
+   (e.g. `https://diagomike.github.io,https://batu.gov.et`).
+4. **First studio account.** Open `https://<service>.onrender.com/admin`, enter the
+   `STUDIO_SETUP_TOKEN` shown in Render's *Environment* page, and choose the administrator's
+   name and password. Add the other staff under *Users*.
+5. **Domain.** In the service's *Settings → Custom Domains*, add `batu.gov.et` and
+   `www.batu.gov.et`, then create the DNS records Render shows at your registrar. TLS
+   certificates are issued automatically.
+6. **Plan.** The free web plan sleeps after 15 minutes without visitors (the first visit then
+   takes about a minute). For the city site use **Starter** (about $7/month): always on.
 
-## Publishing from the studio
+## Environment variables
 
-Run the studio on the office computer:
+| Variable | Needed | What it does |
+|---|---|---|
+| `DATABASE_URL` | production | `postgresql://user:pass@host:5432/db` (Render's `postgres://` form works too). MySQL: `mysql://...` plus `pip install pymysql`. Unset: SQLite file `var/batu.db`. |
+| `SECRET_KEY` | production | Signs studio sign-in cookies. Long and random. Unset: one is generated and kept in the database. |
+| `STUDIO_SETUP_TOKEN` | first run | Lets you create the first studio account from the internet. Not needed after that. |
+| `GEMINI_API_KEY` | optional | AI-written answers. A key saved in the studio (*AI assistant*) takes priority; without any key the assistant quotes the city's records. |
+| `ASK_DAILY_LIMIT` | optional | AI answers per day before the assistant switches to quoting (default 300). |
+| `ALLOWED_ORIGINS` | optional | Other sites allowed to call `/api/ask` from the browser, comma-separated. |
+| `ADMIN_TOKEN` | optional | Bearer token for machines that push news to `POST /api/admin/news`. |
+| `DEFAULT_LANG` | optional | Language at `/` (`en`; `om` once the Oromo text is reviewed). |
+| `PORT` | set by the host | Port to listen on (default 8000). |
+
+## Content: the database and `data/`
+
+- On every start, files in `data/` that nobody has edited in the studio are loaded into the
+  database. Translation fixes committed to git therefore go live on the next deploy.
+- Once staff edit a document in the studio, the studio version wins. If its file in git
+  changes later, *Studio → Backup* flags it and offers **Load from code**.
+- *Backup → Download all content* gives the whole site as the `data/` JSON files. Unzip them
+  over `portal/data/` and commit them to put studio edits into git, or load the zip into
+  another server.
+- Photos uploaded in the studio, and photos residents attach to reports, are stored in the
+  database. The photos in `static/img/` ship with the code.
+- History keeps the last 50 versions of every document; any of them can be restored.
+
+## Backups
+
+- **Database:** Render Postgres (paid plans) takes daily backups. Before big changes, run
+  `pg_dump "$DATABASE_URL" > batu-$(date +%F).sql`.
+- **Content only:** *Studio → Backup → Download all content*.
+
+## Other hosts
+
+The `Dockerfile` runs anywhere that runs containers.
+
+- **Railway:** *New project → Deploy from GitHub* (root `portal/`), add the PostgreSQL plugin,
+  set `DATABASE_URL=${{Postgres.DATABASE_URL}}` and the secrets above.
+- **Fly.io:** `fly launch` in `portal/`, then `fly postgres create`, `fly postgres attach`, and
+  `fly secrets set SECRET_KEY=... STUDIO_SETUP_TOKEN=...`.
+- **Your own server:** `docker compose up -d` with `docker-compose.yml` (portal + PostgreSQL),
+  behind a reverse proxy such as Caddy for TLS.
+
+The container health check calls `/health`, which also checks the database.
+
+## Local development
 
 ```bash
 cd portal
-python -m uvicorn app.main:app --port 8000
+pip install -r requirements.txt
+python -m uvicorn app.main:app --reload --port 8000     # SQLite in var/batu.db
 ```
 
-Open http://localhost:8000/admin. The first visit creates the first administrator, who can
-then add editors under *Users*. Then add these lines to `portal/.env` (the file stays on that
-computer and is not in the code repository):
+Open http://localhost:8000/admin. On this computer the first visit creates the
+administrator. To run against PostgreSQL locally, use `docker compose up --build`, or set
+`DATABASE_URL`.
 
-```
-# FTPS upload (Plesk: Websites & Domains > FTP Access; use the domain's FTP user)
-FTP_HOST=batu.gov.et
-FTP_USER=...
-FTP_PASSWORD=...
-FTP_DIR=httpdocs
+**Changing tables:** edit `app/database.py`, then run
+`alembic revision --autogenerate -m "what changed"`, review the file in `migrations/versions/`,
+and commit it. The app applies it on its next start.
 
-# Read and update residents' requests on the host
-REMOTE_API=https://batu.gov.et
-REMOTE_API_TOKEN=<the admin_token from api/config.php>
+## Scaling notes
 
-# Until the assistant runs in PHP, "Ask Batu" answers from the Python server, e.g. Render.
-# That server must allow https://batu.gov.et in ALLOWED_ORIGINS.
-ASK_API_URL=https://batu-ask.onrender.com
-```
-
-Restart the studio after changing `.env`. **Publish** then:
-
-1. renders every page in the three languages into `dist/httpdocs` (about a minute),
-2. adds the PHP services, `.htaccess`, `sitemap.xml` and `robots.txt`,
-3. packs `dist/batu-site-<date>.zip`,
-4. with *Upload* ticked, sends only the files that changed since the last upload over FTPS.
-   It never deletes files on the host.
-
-The same from a terminal:
-
-```bash
-python tools/build.py --zip --upload
-```
-
-## What runs where
-
-| Feature | On the host | Notes |
-|---|---|---|
-| All pages, 3 languages | static files | English at `/`, Afaan Oromoo at `/om/`, Amharic at `/am/` |
-| Report a problem, complaint | `api/report.php` | Photos go to `private/uploads` |
-| Apply for a service | `api/apply.php` | Fees come from the services list at build time |
-| Boat trip and venue booking | `api/book.php` | Then the payment page |
-| Track a request | `api/request.php` + `static/js/plesk.js` | The public view shows no names or phone numbers |
-| Pay a bill | `api/pay.php` + `plesk.js` | `'payments' => 'off'` explains how to pay at the office |
-| Notices sign-up | `api/subscribe.php` | Lists are under *Subscribers* in the studio |
-| Staff status updates | `api/admin.php` | Token in `config.php`; the studio uses it when `REMOTE_API` is set |
-| Ask Batu (assistant) | Python server for now | A PHP version will replace it |
-
-Without JavaScript, every form still works: it posts to PHP and the visitor lands on the
-tracking or payment page.
-
-## Checklist after each publish
-
-- [ ] https://batu.gov.et/, /om/ and /am/ open, and the language switch keeps the same page.
-- [ ] *Report a problem*: send a test report. It should open the tracking page with a reference.
-- [ ] https://batu.gov.et/api/request/LL-BTU-0001 returns the sample bill as JSON.
-- [ ] https://batu.gov.et/api/config.php and /api/lib.php are refused (403).
-- [ ] In the studio, *Requests* shows `https://batu.gov.et` as the source and lists the test report.
-      Set it to *Resolved* and refresh the tracking page.
-- [ ] Delete test requests later from the database, or leave them as *Closed*.
-
-## If something goes wrong
-
-- **"City services are not set up yet"**: `api/config.php` is missing (step 5).
-- **Forms show a "404 / Method not allowed"**: `.htaccess` is not applied. Check that Proxy
-  mode is on and that the domain runs PHP with Apache.
-- **The studio says it cannot reach the host**: check `REMOTE_API`, and that `admin_token` in
-  `config.php` matches `REMOTE_API_TOKEN`.
-- **PHP errors**: *Websites & Domains → Logs*.
-- **Roll back content**: in the studio, *History* holds the last 50 versions of every content
-  file. Restore one, then Publish.
+- Run **one process** per instance. Rate limits and the studio's background jobs
+  (translation runs) live in memory. A second instance would need Redis for those.
+- The GitHub Pages copy (`tools/build_static.py`) is a static preview built from `data/` in
+  git. It does not show studio edits until they are exported and committed.

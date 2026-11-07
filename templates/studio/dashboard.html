@@ -2,14 +2,15 @@
 {% block title %}Overview{% endblock %}
 {% block main %}
 <div class="head"><div><p class="eyebrow">SHEET S-00 — Overview</p><h1>Good {{ "morning" if now.hour < 12 else ("afternoon" if now.hour < 18 else "evening") }}, {{ user.name }}</h1></div>
-{% if user.role == 'admin' %}<a class="btn gold" href="/admin/publish">Publish the site ↑</a>{% endif %}</div>
+<a class="btn gold" href="/" target="_blank">Open the site ↗</a></div>
+{% if conflicts and user.role == 'admin' %}<div class="msg warn">{{ conflicts|length }} content file(s) changed in the code after staff edited them here; the studio versions are in use. <a href="/admin/backup">Review under Backup →</a></div>{% endif %}
 
 <div class="tiles">
   <a class="tile" href="/admin/requests"><span class="k">Open requests</span><b>{{ open_count }}</b><span class="s">reports, applications, bookings, bills</span></a>
   <a class="tile" href="/admin/c/news"><span class="k">News</span><b>{{ nav["News"][0][3] }}</b><span class="s">add a story or a notice</span></a>
   <a class="tile" href="/admin/translations"><span class="k">Need translating</span>
     {% if missing.error %}<b>?</b><span class="s">{{ missing.error }}</span>{% else %}<b>{{ [missing.om.missing, missing.am.missing]|max }}</b><span class="s">OM {{ missing.om.missing }} · AM {{ missing.am.missing }} of {{ missing.total }}</span>{% endif %}</a>
-  <a class="tile" href="/admin/publish"><span class="k">Last published</span><b class="sm">{{ pub.last.at.replace("T", " ")[:16] if pub.last.at else "never" }}</b><span class="s">{{ ("by " ~ pub.last.by) if pub.last.by else "build and upload the public site" }}</span></a>
+  <a class="tile" href="/admin/c/services"><span class="k">Services</span><b>{{ nav["Services"][0][3] if nav["Services"] else 0 }}</b><span class="s">changes go live when you save</span></a>
 </div>
 
 <div class="cols">

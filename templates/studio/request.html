@@ -7,7 +7,7 @@
   <section class="panel">
     <div class="ph"><span>Details from the resident</span></div>
     <table class="t kv"><tbody>
-      {% for k, v in r.data.items() %}<tr><th>{{ k|replace("_", " ")|capitalize }}</th><td>{% if k == "photo" %}<span class="mono">{{ v }}</span> <span class="muted small">(in var/uploads)</span>{% else %}{{ v }}{% endif %}</td></tr>{% endfor %}
+      {% for k, v in r.data.items() %}<tr><th>{{ k|replace("_", " ")|capitalize }}</th><td>{% if k == "photo" %}<a href="/admin/uploads/{{ v }}" target="_blank"><img src="/admin/uploads/{{ v }}" alt="Photo from the resident" style="max-width:260px;display:block;border:1px solid var(--rule2)"></a>{% else %}{{ v }}{% endif %}</td></tr>{% endfor %}
       {% if r.amount %}<tr><th>Amount</th><td>{{ "{:,.0f}".format(r.amount) }} birr · {{ "paid" if r.paid else "not paid" }}</td></tr>{% endif %}
       <tr><th>Received</th><td class="mono">{{ r.created.replace("T", " ") }}</td></tr>
     </tbody></table>

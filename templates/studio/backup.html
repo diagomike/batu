@@ -1,0 +1,31 @@
+{% extends "studio/base.html" %}
+{% block title %}Backup{% endblock %}
+{% block main %}
+<div class="head"><div><p class="eyebrow">System · content in the database</p><h1>Backup</h1>
+<p class="muted">The site reads its content from the database, so edits go live at once and survive redeploys. The JSON files in the code repository (<span class="mono">data/</span>) are the starting point: a file that nobody edited here follows the code; once staff edit it here, the studio version wins.</p></div>
+<a class="btn gold" href="/admin/backup/content.zip">Download all content</a></div>
+
+<section class="panel">
+  <div class="ph"><span>Content documents</span><span class="mono small">{{ docs|length }}</span></div>
+  <table class="t">
+    <thead><tr><th>Document</th><th>Last change</th><th>By</th><th></th></tr></thead>
+    <tbody>{% for d in docs %}<tr>
+      <td class="mono">{{ d.name }}{% if d.conflict %}<br><span class="tagm">code changed</span> <span class="small muted">{{ d.conflict }}</span>{% endif %}</td>
+      <td class="mono small">{{ d.updated_at }}</td>
+      <td>{{ "the code (data/)" if d.updated_by == "seed" else d.updated_by }}</td>
+      <td class="acts">{% if d.in_code and (d.updated_by != "seed" or d.conflict) %}<form method="post" action="/admin/backup/load/{{ d.name }}" data-confirm="Replace {{ d.name }} with the version in the code? The current version stays in History.">{{ csrf() }}<button class="btn sm ghost">Load from code</button></form>{% endif %}
+        <a class="lnk small" href="/admin/history?file={{ d.name }}">history</a></td>
+    </tr>{% endfor %}</tbody>
+  </table>
+</section>
+
+<section class="panel">
+  <div class="ph"><span>Restore from a download</span></div>
+  <form method="post" action="/admin/backup/import" enctype="multipart/form-data" class="editor" data-confirm="Load every document in this zip? Current versions stay in History.">
+    {{ csrf() }}
+    <div class="fld wide"><label for="arc">Zip from “Download all content”</label><input id="arc" type="file" name="archive" accept=".zip" required></div>
+    <p class="help">To put studio edits into the code repository, unzip the download over <span class="mono">portal/data/</span> and commit it. The database also needs its own backups: use your host's daily Postgres backups.</p>
+    <div class="savebar"><button class="btn">Load the zip</button></div>
+  </form>
+</section>
+{% endblock %}

@@ -1,6 +1,6 @@
 """Loads the city's content files, translations and calendar helpers.
 
-Content lives in data/*.json, written in English. Translations live in
+Content lives in the database (app/store.py), seeded from data/*.json and written in English. Translations live in
 data/i18n/<lang>.json as {english text: translated text}. Anything not yet
 translated falls back to English.
 """
@@ -25,7 +25,9 @@ REVIEWERS = {"om": "Caalaa Placeholder (dummy reviewer)", "am": "Abebe Placehold
 
 
 def _load(name: str):
-    return json.loads((DATA / name).read_text(encoding="utf8"))
+    """A content document from the database (app/store.py), seeded from data/<name>."""
+    from . import store
+    return store.read(name)
 
 
 @lru_cache(maxsize=None)
@@ -65,8 +67,8 @@ def projects():
 
 @lru_cache(maxsize=None)
 def media():
-    p = DATA / "media.json"
-    return json.loads(p.read_text(encoding="utf8")) if p.exists() else {}
+    from . import store
+    return store.read("media.json", {})
 
 
 def service(sid: str):
@@ -83,8 +85,8 @@ _tables: dict[str, dict] = {}
 
 def table(lang: str) -> dict:
     if lang not in _tables:
-        p = DATA / "i18n" / f"{lang}.json"
-        _tables[lang] = json.loads(p.read_text(encoding="utf8")) if p.exists() else {}
+        from . import store
+        _tables[lang] = store.read(f"i18n/{lang}.json", {})
     return _tables[lang]
 
 

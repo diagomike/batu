@@ -1,8 +1,9 @@
 """Batu Studio: the staff side of the portal, at /admin.
 
-Staff sign in with a username and password (scrypt hashes in var/studio_users.json). On a fresh
-install the first visit from this computer creates the first administrator. Every form is built
-from app/admin_schema.py; saves go through app/store.py, which keeps a backup of each version.
+Staff sign in with a username and password (scrypt hashes in the database). On a fresh install
+the first administrator is created from the studio computer itself, or anywhere with the
+STUDIO_SETUP_TOKEN from the server's environment. Every form is built from app/admin_schema.py;
+saves go through app/store.py, which keeps each earlier version.
 """
 from __future__ import annotations
 
@@ -27,33 +28,42 @@ from fastapi.templating import Jinja2Templates
 
 from . import admin_schema as S
 from . import content, db, store
+from . import database as D
 
 router = APIRouter(prefix="/admin")
 templates = Jinja2Templates(directory=str(content.ROOT / "templates"))
 VAR = content.ROOT / "var"
-USERS = VAR / "studio_users.json"
-SECRET_FILE = VAR / "studio_secret.key"
 SESSION_HOURS = 12
 COOKIE = "batu_studio"
 
 
-# ---------- users and sessions ----------
+# ---------- users and sessions (tables studio_users and settings) ----------
+_secret_cache: bytes | None = None
+
+
 def _secret() -> bytes:
-    if not SECRET_FILE.exists():
-        VAR.mkdir(parents=True, exist_ok=True)
-        SECRET_FILE.write_bytes(secrets.token_bytes(32))
-    return SECRET_FILE.read_bytes()
+    """SECRET_KEY from the environment, or a random one kept in the database."""
+    global _secret_cache
+    if _secret_cache is None:
+        env = os.getenv("SECRET_KEY", "").strip()
+        if env:
+            _secret_cache = env.encode()
+        else:
+            from . import settings as st
+            v = st.get("studio_secret")
+            if not v:
+                v = secrets.token_hex(32)
+                st.put("studio_secret", v, "system")
+            _secret_cache = v.encode()
+    return _secret_cache
 
 
 def _users() -> dict:
-    return json.loads(USERS.read_text(encoding="utf8")) if USERS.exists() else {}
-
-
-def _save_users(u: dict):
-    VAR.mkdir(parents=True, exist_ok=True)
-    tmp = USERS.with_suffix(".tmp")
-    tmp.write_text(json.dumps(u, indent=2), encoding="utf8")
-    os.replace(tmp, USERS)
+    from sqlalchemy import select
+    db.con()
+    with D.engine().connect() as c:
+        return {r.name: {"salt": r.salt, "hash": r.hash, "role": r.role, "created": r.created}
+                for r in c.execute(select(D.studio_users).order_by(D.studio_users.c.name))}
 
 
 def _hash(password: str, salt: bytes) -> str:
@@ -61,14 +71,23 @@ def _hash(password: str, salt: bytes) -> str:
 
 
 def set_password(name: str, password: str, role: str | None = None):
-    u = _users()
+    from sqlalchemy import insert, select, update
     salt = secrets.token_bytes(16)
-    rec = u.get(name, {"role": role or "editor", "created": dt.datetime.now().isoformat(timespec="seconds")})
-    rec.update(salt=salt.hex(), hash=_hash(password, salt))
-    if role:
-        rec["role"] = role
-    u[name] = rec
-    _save_users(u)
+    h = _hash(password, salt)
+    db.con()
+    with D.engine().begin() as c:
+        if c.execute(select(D.studio_users.c.name).where(D.studio_users.c.name == name)).first():
+            vals = {"salt": salt.hex(), "hash": h} | ({"role": role} if role else {})
+            c.execute(update(D.studio_users).where(D.studio_users.c.name == name).values(**vals))
+        else:
+            c.execute(insert(D.studio_users).values(name=name, salt=salt.hex(), hash=h, role=role or "editor",
+                                                    created=dt.datetime.now().isoformat(timespec="seconds")))
+
+
+def delete_user(name: str):
+    from sqlalchemy import delete
+    with D.engine().begin() as c:
+        c.execute(delete(D.studio_users).where(D.studio_users.c.name == name))
 
 
 def check_password(name: str, password: str) -> bool:
@@ -133,7 +152,16 @@ async def need_post(request: Request, role: str | None = None):
 _fails: dict[str, list] = {}
 
 
+def _setup_token_ok(token: str) -> bool:
+    expected = os.getenv("STUDIO_SETUP_TOKEN", "").strip()
+    return len(expected) >= 16 and hmac.compare_digest(token.strip(), expected)
+
+
 def _is_local(request: Request) -> bool:
+    """Setup without a token only on a laptop: SQLite (no DATABASE_URL) and a request from this computer.
+    On a server the address can come from a proxy header, so there the setup token is always required."""
+    if os.getenv("DATABASE_URL", "").strip():
+        return False
     host = request.client.host if request.client else ""
     return host in ("127.0.0.1", "::1", "localhost", "testclient")
 
@@ -148,7 +176,7 @@ def page(request: Request, name: str, user: dict | None, **kw):
     base = dict(request=request, user=user, S=S, groups=S.GROUPS, nav=_nav() if user else {}, now=dt.datetime.now(),
                 csrf=csrf, content_mod=content,
                 flash=request.query_params.get("ok", ""), err=request.query_params.get("err", ""),
-                remote=bool(os.getenv("REMOTE_API")), site_name=content.site()["city"].get("name_om", "Batu"))
+                image_url=image_url, store_conflicts=len(store.conflicts), site_name=content.site()["city"].get("name_om", "Batu"))
     base.update(kw)
     return templates.TemplateResponse(request, f"studio/{name}", base)
 
@@ -278,28 +306,30 @@ def _untranslated(strings: list[str]) -> dict:
 @router.get("/", response_class=HTMLResponse)
 def dashboard(request: Request):
     if not _users():
-        return page(request, "setup.html", None, local=_is_local(request))
+        return page(request, "setup.html", None, local=_is_local(request),
+                    token_set=len(os.getenv("STUDIO_SETUP_TOKEN", "").strip()) >= 16)
     u = current_user(request)
     if not u:
         return page(request, "login.html", None)
     reqs = db.list_requests(500)
     open_reqs = [r for r in reqs if r["status"] not in ("resolved", "closed", "rejected")]
     recent = []
-    for f in ("site.json", "services.json", "offices.json", "kebeles.json", "discover.json", "news.json", "projects.json", "media.json"):
+    for f in FILES:
         for h in store.history(f)[:5]:
             recent.append(h | {"file": f})
     recent.sort(key=lambda h: h["when"], reverse=True)
     missing = translation_counts()
     return page(request, "dashboard.html", u, reqs=reqs[:8], open_count=len(open_reqs), recent=recent[:10],
-                missing=missing, pub=publish_state())
+                missing=missing, conflicts=store.conflicts)
 
 
 @router.post("/setup")
-async def setup(request: Request, name: str = Form(...), password: str = Form(...), password2: str = Form(...)):
+async def setup(request: Request, name: str = Form(...), password: str = Form(...), password2: str = Form(...),
+                token: str = Form("")):
     if _users():
         raise HTTPException(403, "Setup is already done.")
-    if not _is_local(request):
-        raise HTTPException(403, "The first account can only be created on the studio computer itself.")
+    if not (_is_local(request) or _setup_token_ok(token)):
+        return back("/admin", err="Wrong setup token. Find STUDIO_SETUP_TOKEN in the server's environment settings.")
     name = name.strip().lower()
     if not re.fullmatch(r"[a-z0-9._-]{2,32}", name):
         return back("/admin", err="Username: 2-32 letters, numbers, dots or dashes.")
@@ -486,8 +516,13 @@ async def single_save(request: Request, name: str):
     return back(f"/admin/s/{name}", ok="Saved.")
 
 
-# ---------- media library ----------
+# ---------- media library (photos in the database, table media_files) ----------
 IMG = content.ROOT / "static" / "img"
+
+
+def image_url(slug: str, size: int = 800) -> str:
+    """Photos from the code repository are static files; studio uploads are served from the database."""
+    return f"/static/img/{slug}-{size}.jpg" if (IMG / f"{slug}-{size}.jpg").exists() else f"/media/{slug}-{size}.jpg"
 
 
 @router.get("/media", response_class=HTMLResponse)
@@ -496,8 +531,7 @@ def media_list(request: Request, q: str = ""):
     items = sorted(content.media().items())
     if q:
         items = [x for x in items if q.lower() in json.dumps(x, ensure_ascii=False).lower()]
-    used = _image_usage()
-    return page(request, "media.html", u, items=items, q=q, used=used)
+    return page(request, "media.html", u, items=items, q=q, used=_image_usage(), image_url=image_url)
 
 
 def _image_usage() -> dict:
@@ -515,6 +549,7 @@ def _image_usage() -> dict:
 async def media_upload(request: Request, photo: UploadFile = File(...)):
     u, form = await need_post(request)
     from PIL import Image, ImageOps
+    from sqlalchemy import delete, insert
     blob = await photo.read()
     if len(blob) > 25_000_000:
         return back("/admin/media", err="That file is over 25 MB.")
@@ -523,11 +558,16 @@ async def media_upload(request: Request, photo: UploadFile = File(...)):
     except Exception:  # noqa: BLE001
         return back("/admin/media", err="That file is not a photo the studio can read (use JPG, PNG or WebP).")
     slug = store.slug(str(form.get("slug") or Path(photo.filename or "photo").stem), set(content.media()))
-    IMG.mkdir(parents=True, exist_ok=True)
-    for size in (1600, 800):
-        copy = im.copy()
-        copy.thumbnail((size, size * 2))
-        copy.save(IMG / f"{slug}-{size}.jpg", "JPEG", quality=82, optimize=True, progressive=True)
+    t = dt.datetime.now().isoformat(timespec="seconds")
+    with D.engine().begin() as c:
+        c.execute(delete(D.media_files).where(D.media_files.c.slug == slug))
+        for size in (1600, 800):
+            copy = im.copy()
+            copy.thumbnail((size, size * 2))
+            buf = io.BytesIO()
+            copy.save(buf, "JPEG", quality=82, optimize=True, progressive=True)
+            c.execute(insert(D.media_files).values(slug=slug, size=size, content_type="image/jpeg",
+                                                   data=buf.getvalue(), updated_at=t))
     m = store.read("media.json")
     m[slug] = {"caption": str(form.get("caption", "")).strip(), "credit": str(form.get("credit", "")).strip() or "City of Batu",
                "licence": str(form.get("licence", "")).strip(), "licence_url": str(form.get("licence_url", "")).strip(),
@@ -551,15 +591,17 @@ async def media_save(request: Request, slug: str):
 @router.post("/media/{slug}/delete")
 async def media_delete(request: Request, slug: str):
     u, _ = await need_post(request)
+    from sqlalchemy import delete
     if slug in _image_usage():
         return back("/admin/media", err=f"'{slug}' is still used on the site. Pick another photo there first.")
     m = store.read("media.json")
     if m.pop(slug, None) is None:
         raise HTTPException(404)
     store.write("media.json", m, who=u["name"], note=f"removed photo {slug}")
-    for size in (1600, 800):
-        (IMG / f"{slug}-{size}.jpg").unlink(missing_ok=True)
-    return back("/admin/media", ok=f"Removed '{slug}'.")
+    with D.engine().begin() as c:
+        c.execute(delete(D.media_files).where(D.media_files.c.slug == slug))
+    return back("/admin/media", ok=f"Removed '{slug}'." + (" Its files in static/img stay in the code repository."
+                                                          if (IMG / f"{slug}-800.jpg").exists() else ""))
 
 
 # ---------- translations ----------
@@ -577,14 +619,18 @@ def tr_tool():
     return _tr_mod
 
 
+CONTENT_DOCS = ["site.json", "services.json", "offices.json", "kebeles.json", "discover.json", "news.json",
+                "projects.json", "media.json"]
+
+
 def all_strings() -> list[str]:
     t = tr_tool()
-    return sorted((t.template_strings() | t.data_strings()) - {""})
+    docs = [store.read(n, {}) for n in CONTENT_DOCS]
+    return sorted((t.template_strings() | t.data_strings(docs)) - {""})
 
 
 def _reviewed() -> dict:
-    p = content.DATA / "i18n" / "reviewed.json"
-    return json.loads(p.read_text(encoding="utf8")) if p.exists() else {}
+    return store.read("i18n/reviewed.json", {})
 
 
 def translation_counts() -> dict:
@@ -685,7 +731,8 @@ def _run_translation(who: str):
             st["log"].append(f"{lang}: {len(todo)} to translate")
             if not todo:
                 continue
-            path = content.DATA / "i18n" / f"{lang}.json"
+            path = VAR / f"translation-progress-{lang}.json"  # progress file; the result goes to the database
+            path.parent.mkdir(parents=True, exist_ok=True)
             if t.KEY:
                 for s in todo:
                     v = t.translate(s, lang)
@@ -707,45 +754,21 @@ def _run_translation(who: str):
 
 
 # ---------- requests and other records from residents ----------
-def remote():
-    """Requests submitted on the live host, read through its admin API (when REMOTE_API is set)."""
-    base = os.getenv("REMOTE_API", "").rstrip("/")
-    if not base:
-        return None
-    import httpx
-    return httpx.Client(base_url=base, timeout=20,
-                        headers={"Authorization": "Bearer " + os.getenv("REMOTE_API_TOKEN", "")})
-
-
 @router.get("/requests", response_class=HTMLResponse)
 def requests_page(request: Request, status: str = "", q: str = ""):
     u = need(request)
-    source, error = "this computer", ""
-    cl = remote()
-    if cl:
-        try:
-            reqs = cl.get("/api/admin/requests", params={"limit": 500}).raise_for_status().json()
-            source = os.getenv("REMOTE_API")
-        except Exception as e:  # noqa: BLE001
-            reqs, error = [], f"Could not reach {os.getenv('REMOTE_API')}: {e}"
-    else:
-        reqs = db.list_requests(500)
+    reqs = db.list_requests(1000)
     if status:
         reqs = [r for r in reqs if r["status"] == status]
     if q:
         reqs = [r for r in reqs if q.lower() in json.dumps(r, ensure_ascii=False).lower()]
-    return page(request, "requests.html", u, reqs=reqs, statuses=db.STATUS_LABELS, status=status, q=q,
-                source=source, error=error)
+    return page(request, "requests.html", u, reqs=reqs, statuses=db.STATUS_LABELS, status=status, q=q)
 
 
 @router.get("/requests/{ref}", response_class=HTMLResponse)
 def request_detail(request: Request, ref: str):
     u = need(request)
-    cl = remote()
-    if cl:
-        r = cl.get(f"/api/admin/requests/{ref}").json()
-    else:
-        r = db.get_request(ref)
+    r = db.get_request(ref)
     if not r:
         raise HTTPException(404)
     return page(request, "request.html", u, r=r, statuses=db.STATUS_LABELS)
@@ -757,12 +780,18 @@ async def request_status(request: Request, ref: str):
     status, note = str(form.get("status", "")), str(form.get("note", "")).strip()
     if status not in db.STATUS_LABELS:
         raise HTTPException(400)
-    cl = remote()
-    if cl:
-        cl.post("/api/admin/status", json={"ref": ref, "status": status, "note": note, "by": u["name"]}).raise_for_status()
-    else:
-        db.set_status(ref, status, note)
+    db.set_status(ref, status, note)
     return back(f"/admin/requests/{ref}", ok=f"Status set to “{db.STATUS_LABELS[status]}”. The resident sees it on the tracking page.")
+
+
+@router.get("/uploads/{name}")
+def upload_file(request: Request, name: str):
+    """A photo a resident attached to a report (staff only)."""
+    need(request)
+    f = db.get_upload(name)
+    if not f:
+        raise HTTPException(404)
+    return Response(f["data"], media_type=f["content_type"], headers={"Cache-Control": "private, max-age=3600"})
 
 
 @router.get("/payments", response_class=HTMLResponse)
@@ -827,7 +856,7 @@ async def history_restore(request: Request):
     if file not in FILES:
         raise HTTPException(404)
     store.restore(file, version, who=u["name"])
-    return back(f"/admin/history?file={file}", ok=f"Restored the version from {version[:8]}. The version it replaced is in the list too.")
+    return back(f"/admin/history?file={file}", ok="Restored. The version it replaced is in the list too, so this can be undone.")
 
 
 # ---------- users ----------
@@ -854,9 +883,7 @@ async def users_delete(request: Request, name: str):
     u, _ = await need_post(request, "admin")
     if name == u["name"]:
         return back("/admin/users", err="You cannot remove your own account.")
-    users = _users()
-    users.pop(name, None)
-    _save_users(users)
+    delete_user(name)
     return back("/admin/users", ok=f"Removed '{name}'.")
 
 
@@ -912,66 +939,57 @@ def _ai_label(active: str) -> str:
             "none": "no AI key (quoted answers from city records)"}.get(active, active)
 
 
-# ---------- publish ----------
-_pub = {"running": False, "log": [], "started": None, "finished": None, "ok": None}
-
-
-def publish_state() -> dict:
-    last = VAR / "last_publish.json"
-    info = json.loads(last.read_text(encoding="utf8")) if last.exists() else {}
-    return _pub | {"last": info, "ftp": bool(os.getenv("FTP_HOST")), "target": os.getenv("FTP_HOST", "")}
-
-
-@router.get("/publish", response_class=HTMLResponse)
-def publish_page(request: Request):
+# ---------- backup: export and import content ----------
+@router.get("/backup", response_class=HTMLResponse)
+def backup_page(request: Request):
     u = need(request, "admin")
-    return page(request, "publish.html", u, pub=publish_state(), counts=translation_counts())
+    return page(request, "backup.html", u, docs=store.status())
 
 
-@router.get("/publish/status")
-def publish_status(request: Request):
-    need(request)
-    return JSONResponse(publish_state())
+@router.get("/backup/content.zip")
+def backup_zip(request: Request):
+    """Every content document as the JSON files of data/ (the format in the code repository)."""
+    need(request, "admin")
+    import zipfile
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        for name, data in sorted(store.export_all().items()):
+            z.writestr(f"data/{name}", json.dumps(data, ensure_ascii=False, indent=2) + "\n")
+    stamp = dt.datetime.now().strftime("%Y%m%d-%H%M")
+    return Response(buf.getvalue(), media_type="application/zip",
+                    headers={"Content-Disposition": f"attachment; filename=batu-content-{stamp}.zip"})
 
 
-@router.post("/publish")
-async def publish_run(request: Request):
-    u, form = await need_post(request, "admin")
-    if _pub["running"]:
-        return back("/admin/publish", err="Publishing is already running.")
-    upload = bool(form.get("upload"))
-    threading.Thread(target=_publish, args=(u["name"], upload), daemon=True).start()
-    return back("/admin/publish", ok="Publishing started.")
-
-
-def _publish(who: str, upload: bool):
-    _pub.update(running=True, log=[], started=dt.datetime.now().isoformat(timespec="seconds"), finished=None, ok=None)
-    log = _pub["log"].append
+@router.post("/backup/import")
+async def backup_import(request: Request, archive: UploadFile = File(...)):
+    u, _ = await need_post(request, "admin")
+    import zipfile
     try:
-        # The build runs as its own process: it swaps in a throwaway database and turns AI off,
-        # which must never touch this running server.
-        import subprocess
-        import sys
-        cmd = [sys.executable, "-u", str(content.ROOT / "tools" / "build.py"), "--zip"] + (["--upload"] if upload else [])
-        proc = subprocess.Popen(cmd, cwd=str(content.ROOT), stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                text=True, encoding="utf8", errors="replace", env=os.environ | {"BATU_BUILD": "1", "PYTHONIOENCODING": "utf-8"})
-        result = {}
-        for line in proc.stdout:
-            line = line.rstrip()
-            if line.startswith("RESULT "):
-                result = json.loads(line[7:])
-            elif line and "Warning" not in line and "from starlette" not in line:
-                log(line)
-        if proc.wait() != 0:
-            raise RuntimeError(f"the build stopped (exit code {proc.returncode})")
-        info = {"at": dt.datetime.now().isoformat(timespec="seconds"), "by": who, "uploaded": upload} | result
-        (VAR / "last_publish.json").write_text(json.dumps(info, indent=2), encoding="utf8")
-        _pub["ok"] = True
-    except Exception as e:  # noqa: BLE001
-        log(f"Stopped: {e}")
-        _pub["ok"] = False
-    finally:
-        _pub.update(running=False, finished=dt.datetime.now().isoformat(timespec="seconds"))
+        z = zipfile.ZipFile(io.BytesIO(await archive.read()))
+    except zipfile.BadZipFile:
+        return back("/admin/backup", err="That is not a zip file from Download all content.")
+    done = []
+    for info in z.infolist():
+        name = info.filename.removeprefix("data/")
+        if name in store.FILES and info.file_size < 20_000_000:
+            try:
+                data = json.loads(z.read(info).decode("utf8"))
+            except ValueError:
+                return back("/admin/backup", err=f"{name} in the zip is not valid JSON. Nothing after it was loaded.")
+            store.write(name, data, who=u["name"], note="imported from a backup")
+            done.append(name)
+    if not done:
+        return back("/admin/backup", err="No content files found in that zip.")
+    return back("/admin/backup", ok=f"Loaded {len(done)} document(s): {', '.join(done)}. Earlier versions are in History.")
+
+
+@router.post("/backup/load/{name:path}")
+async def backup_load_file(request: Request, name: str):
+    u, _ = await need_post(request, "admin")
+    if name not in store.FILES or not (content.DATA / name).exists():
+        raise HTTPException(404)
+    store.load_file(name, u["name"])
+    return back("/admin/backup", ok=f"Loaded data/{name} from the code. The studio version is in History.")
 
 
 # ---------- search re-index after saves (debounced) ----------

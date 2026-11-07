@@ -1,7 +1,7 @@
 {% extends "studio/base.html" %}
 {% block title %}Photos{% endblock %}
 {% block main %}
-<div class="head"><div><p class="eyebrow">Library · media.json · static/img</p><h1>Photos <span class="ct big">{{ items|length }}</span></h1>
+<div class="head"><div><p class="eyebrow">Library · photos</p><h1>Photos <span class="ct big">{{ items|length }}</span></h1>
 <p class="muted">Every photo is stored in two sizes (1600 and 800 px). Credit the photographer and the licence; the About page lists them all.</p></div></div>
 
 <details class="panel upload" {% if not items %}open{% endif %}>
@@ -27,7 +27,7 @@
 {% for slug, m in items %}
   <details class="mcard">
     <summary>
-      <img src="/static/img/{{ slug }}-800.jpg" alt="" loading="lazy">
+      <img src="{{ image_url(slug) }}" alt="" loading="lazy">
       <span class="mono small">{{ slug }}</span>
       <span class="small muted">{{ m.credit }}{% if m.licence %} · {{ m.licence }}{% endif %}</span>
       {% if used.get(slug) %}<span class="tagm">used {{ used[slug]|length }}×</span>{% endif %}

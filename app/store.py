@@ -1,26 +1,38 @@
-"""Read and write the content files in data/ safely.
+"""Content documents (site.json, services.json, i18n/om.json ...) kept in the database.
 
-Every save is atomic (write to a temp file, then replace), keeps the previous version in
-var/history/<file>/<time>.json, and clears the in-memory caches so the site shows the change
-at once. News and notices live in data/news.json; this module is their single source.
+The JSON files in data/ are the starting point and the export format; the database is what
+the site reads and the studio edits, so edits survive redeploys on container hosts.
+
+How a file in data/ and the database stay in step (sync_from_files, at every start):
+  - not in the database yet                 -> loaded from the file
+  - never edited in the studio, file changed -> updated from the file (e.g. translation fixes in git)
+  - edited in the studio, file changed       -> the studio version stays; the studio lists it under
+                                               Backup, where staff can load the file instead
+Every save keeps the version it replaced (content_versions, last 50 per document).
 """
 from __future__ import annotations
 
+import copy
 import datetime as dt
+import hashlib
 import json
-import os
 import re
-import secrets
 import threading
-from pathlib import Path
+
+from sqlalchemy import delete, insert, select, update
 
 from . import content
+from . import database as D
 
 DATA = content.DATA
-HISTORY = content.ROOT / "var" / "history"
+FILES = ["site.json", "services.json", "offices.json", "kebeles.json", "discover.json", "news.json",
+         "projects.json", "media.json", "i18n/om.json", "i18n/am.json", "i18n/reviewed.json"]
 KEEP_VERSIONS = 50
 _lock = threading.RLock()
-_after_save = []  # callbacks run after each save (the app registers a search re-index here)
+_cache: dict[str, object] = {}
+_after_save = []      # callbacks after each save (the studio re-indexes the assistant here)
+conflicts: dict[str, str] = {}  # document -> why the file in data/ was not loaded
+_MISSING = object()
 
 
 def on_save(fn):
@@ -28,65 +40,87 @@ def on_save(fn):
     return fn
 
 
-def path_of(name: str) -> Path:
+def _check(name: str):
     if not re.fullmatch(r"[a-z0-9_\-/]+\.json", name) or ".." in name:
-        raise ValueError(f"bad content file name: {name}")
-    return DATA / name
+        raise ValueError(f"bad content name: {name}")
 
 
-def read(name: str):
-    return json.loads(path_of(name).read_text(encoding="utf8"))
+def _stamp() -> str:
+    return dt.datetime.now().isoformat(timespec="microseconds")
+
+
+def _file_hash(name: str) -> str | None:
+    p = DATA / name
+    return hashlib.sha1(p.read_bytes()).hexdigest() if p.exists() else None
+
+
+def _engine():
+    from . import db
+    db.con()
+    return D.engine()
+
+
+# ---------- read and write ----------
+def read(name: str, default=_MISSING):
+    _check(name)
+    with _lock:
+        if name in _cache:
+            return copy.deepcopy(_cache[name])
+    with _engine().connect() as c:
+        row = c.execute(select(D.content_docs.c.data).where(D.content_docs.c.name == name)).first()
+    if row is None:
+        if default is not _MISSING:
+            return default
+        raise FileNotFoundError(name)
+    with _lock:
+        _cache[name] = row.data
+    return copy.deepcopy(row.data)
 
 
 def write(name: str, data, who: str = "studio", note: str = "") -> None:
-    """Save a content file, keeping the old version in var/history."""
-    p = path_of(name)
-    text = json.dumps(data, ensure_ascii=False, indent=2) + "\n"
-    with _lock:
-        if p.exists():
-            old = p.read_text(encoding="utf8")
-            if old == text:
-                return
-            hdir = HISTORY / name.replace("/", "__").removesuffix(".json")
-            hdir.mkdir(parents=True, exist_ok=True)
-            stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S-%f")
-            (hdir / f"{stamp}.json").write_text(old, encoding="utf8")
-            (hdir / f"{stamp}.meta").write_text(json.dumps({"who": who, "note": note}), encoding="utf8")
-            versions = sorted(hdir.glob("*.json"))
-            for v in versions[:-KEEP_VERSIONS]:
-                v.unlink(missing_ok=True)
-                v.with_suffix(".meta").unlink(missing_ok=True)
-        tmp = p.with_suffix(".tmp")
-        tmp.write_text(text, encoding="utf8")
-        os.replace(tmp, p)
+    """Save a document and keep the one it replaces under History."""
+    _check(name)
+    data = json.loads(json.dumps(data, ensure_ascii=False))  # plain JSON only
+    with _lock, _engine().begin() as c:
+        old = c.execute(select(D.content_docs).where(D.content_docs.c.name == name)).first()
+        if old is not None and old.data == data:
+            return
+        t = _stamp()
+        if old is not None:
+            c.execute(insert(D.content_versions).values(name=name, data=old.data, saved_at=t, who=who, note=note[:300]))
+            c.execute(update(D.content_docs).where(D.content_docs.c.name == name)
+                      .values(data=data, updated_at=t, updated_by=who))
+            ids = [r.id for r in c.execute(select(D.content_versions.c.id).where(D.content_versions.c.name == name)
+                                           .order_by(D.content_versions.c.id.desc()))]
+            if len(ids) > KEEP_VERSIONS:
+                c.execute(delete(D.content_versions).where(D.content_versions.c.id.in_(ids[KEEP_VERSIONS:])))
+        else:
+            c.execute(insert(D.content_docs).values(name=name, data=data, updated_at=t, updated_by=who, seed_hash=None))
+        conflicts.pop(name, None)
     refresh()
 
 
 def history(name: str) -> list[dict]:
-    hdir = HISTORY / name.replace("/", "__").removesuffix(".json")
-    out = []
-    for v in sorted(hdir.glob("*.json"), reverse=True):
-        meta = {}
-        m = v.with_suffix(".meta")
-        if m.exists():
-            meta = json.loads(m.read_text(encoding="utf8"))
-        stamp = v.stem
-        when = dt.datetime.strptime(stamp[:15], "%Y%m%d-%H%M%S")
-        out.append({"id": stamp, "when": when.strftime("%Y-%m-%d %H:%M:%S"), "who": meta.get("who", ""),
-                    "note": meta.get("note", ""), "size": v.stat().st_size})
-    return out
+    with _engine().connect() as c:
+        rows = c.execute(select(D.content_versions).where(D.content_versions.c.name == name)
+                         .order_by(D.content_versions.c.id.desc())).all()
+    return [{"id": str(r.id), "when": r.saved_at[:19].replace("T", " "), "who": r.who or "", "note": r.note or "",
+             "size": len(json.dumps(r.data, ensure_ascii=False).encode())} for r in rows]
 
 
 def restore(name: str, version: str, who: str) -> None:
-    hdir = HISTORY / name.replace("/", "__").removesuffix(".json")
-    v = hdir / f"{version}.json"
-    if not re.fullmatch(r"[0-9\-]+", version) or not v.exists():
+    with _engine().connect() as c:
+        row = c.execute(select(D.content_versions.c.data).where(D.content_versions.c.name == name,
+                                                                D.content_versions.c.id == int(version))).first()
+    if row is None:
         raise FileNotFoundError(version)
-    write(name, json.loads(v.read_text(encoding="utf8")), who=who, note=f"restored {version}")
+    write(name, row.data, who=who, note=f"restored version {version}")
 
 
 def refresh() -> None:
-    """Drop cached content so the next request reads the files again."""
+    """Drop cached content so the next request reads the database again."""
+    with _lock:
+        _cache.clear()
     for fn in (content.site, content.services_data, content.offices, content.kebeles, content.discover,
                content.news_seed, content.projects, content.media):
         fn.cache_clear()
@@ -98,7 +132,63 @@ def refresh() -> None:
             print("[store] after-save hook failed:", e)
 
 
-# ---------- news and notices (data/news.json) ----------
+# ---------- data/ files <-> database ----------
+def sync_from_files(eng=None) -> dict:
+    """Load data/*.json into the database following the rules at the top of this file."""
+    eng = eng or D.engine()
+    report = {"loaded": [], "updated": [], "kept": []}
+    with _lock, eng.begin() as c:
+        for name in FILES:
+            h = _file_hash(name)
+            if h is None:
+                continue
+            doc = c.execute(select(D.content_docs).where(D.content_docs.c.name == name)).first()
+            if doc is not None and doc.seed_hash == h:
+                continue
+            data = json.loads((DATA / name).read_text(encoding="utf8"))
+            t = _stamp()
+            if doc is None:
+                c.execute(insert(D.content_docs).values(name=name, data=data, updated_at=t, updated_by="seed", seed_hash=h))
+                report["loaded"].append(name)
+            elif doc.updated_by == "seed":
+                if doc.data != data:
+                    c.execute(insert(D.content_versions).values(name=name, data=doc.data, saved_at=t, who="seed",
+                                                                note="updated from data/" + name))
+                c.execute(update(D.content_docs).where(D.content_docs.c.name == name).values(data=data, updated_at=t, seed_hash=h))
+                report["updated"].append(name)
+            else:
+                conflicts[name] = f"data/{name} changed in the code after it was edited in the studio (by {doc.updated_by})."
+                report["kept"].append(name)
+    with _lock:
+        _cache.clear()
+    return report
+
+
+def load_file(name: str, who: str) -> None:
+    """Replace a document with the file from data/ (the studio's "load from code")."""
+    data = json.loads((DATA / name).read_text(encoding="utf8"))
+    write(name, data, who=who, note=f"loaded data/{name}")
+    with _engine().begin() as c:  # follow the file again from now on
+        c.execute(update(D.content_docs).where(D.content_docs.c.name == name)
+                  .values(updated_by="seed", seed_hash=_file_hash(name)))
+    conflicts.pop(name, None)
+    refresh()
+
+
+def export_all() -> dict:
+    with _engine().connect() as c:
+        return {r.name: r.data for r in c.execute(select(D.content_docs.c.name, D.content_docs.c.data))}
+
+
+def status() -> list[dict]:
+    with _engine().connect() as c:
+        rows = c.execute(select(D.content_docs.c.name, D.content_docs.c.updated_at, D.content_docs.c.updated_by)
+                         .order_by(D.content_docs.c.name)).all()
+    return [{"name": r.name, "updated_at": r.updated_at[:19].replace("T", " "), "updated_by": r.updated_by,
+             "conflict": conflicts.get(r.name, ""), "in_code": (DATA / r.name).exists()} for r in rows]
+
+
+# ---------- news and notices (the news.json document) ----------
 def _norm(item: dict, kind: str) -> dict:
     """One shape for pages and the assistant, whatever the stored fields are called."""
     text = item.get("text", "")
@@ -179,27 +269,3 @@ def delete_news(nid: str, who: str = "studio") -> bool:
         if changed:
             write("news.json", data, who=who, note=f"deleted {nid}")
     return changed
-
-
-def migrate_db_news(con) -> int:
-    """Move news pushed into the old SQLite table (admin or API) into news.json, once."""
-    try:
-        rows = con.execute("select * from news where created_via != 'seed'").fetchall()
-    except Exception:  # noqa: BLE001 - table absent on new installs
-        return 0
-    existing = {n["id"] for k in ("news", "notice") for n in list_news(k, 10_000)}
-    moved = 0
-    for r in rows:
-        r = dict(r)
-        if r["id"] in existing:
-            continue
-        add_news(r, kind=r.get("kind") or "news", via=r.get("created_via") or "api")
-        moved += 1
-    if rows:
-        con.execute("delete from news where created_via != 'seed'")
-        con.commit()
-    return moved
-
-
-def new_id(prefix: str = "") -> str:
-    return prefix + secrets.token_hex(3)

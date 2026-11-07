@@ -57,7 +57,8 @@ def template_strings():
     return out
 
 
-def data_strings():
+def data_strings(docs=None):
+    """Texts in the content. docs: content documents to read instead of data/*.json (the studio passes the database's)."""
     out = set()
 
     def walk(obj, key=None):
@@ -74,8 +75,10 @@ def data_strings():
             for v in obj:
                 walk(v, key)
 
-    for p in (ROOT / "data").glob("*.json"):
-        walk(json.loads(p.read_text(encoding="utf8")))
+    if docs is None:
+        docs = [json.loads(p.read_text(encoding="utf8")) for p in (ROOT / "data").glob("*.json")]
+    for d in docs:
+        walk(d)
     # news and notices are in data/news.json, which the walk above already covers
     return out
 

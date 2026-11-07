@@ -40,7 +40,7 @@
         <option value="">No photo</option>
         {% for slug in media|sort %}<option value="{{ slug }}" {% if slug == val %}selected{% endif %}>{{ slug }}</option>{% endfor %}
       </select>
-      <img alt="" data-preview src="{{ '/static/img/' ~ val ~ '-800.jpg' if val else '' }}" {% if not val %}hidden{% endif %}>
+      <img alt="" data-preview src="{{ image_url(val) if val else '' }}" {% if not val %}hidden{% endif %}>
       <a class="small" href="/admin/media" target="_blank">Add a photo to the library ↗</a>
     </div>
   {% elif f.type == "coords" %}<input id="{{ fid }}" name="{{ name }}" value="{{ val|join(', ') if val else '' }}" placeholder="7.9333, 38.7167" inputmode="decimal">

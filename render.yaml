@@ -23,3 +23,24 @@ services:
         value: en
       - key: ADMIN_TOKEN
         generateValue: true    # random, so the staff desk on this public server is not open
+      - key: SECRET_KEY
+        generateValue: true    # signs studio sign-in cookies
+      - key: STUDIO_SETUP_TOKEN
+        generateValue: true    # needed once, to create the first studio account at /admin
+      # Database: until DATABASE_URL is set the app uses SQLite on the service's disk, which Render
+      # wipes on every deploy (requests and studio edits are lost). To keep them, uncomment this and
+      # the "databases" block at the end. See DEPLOY.md before turning it on: it creates a paid resource.
+      # - key: DATABASE_URL
+      #   fromDatabase:
+      #     name: batu-db
+      #     property: connectionString
+
+# PostgreSQL for requests, payments, studio content and accounts (see DEPLOY.md).
+# Uncomment to create it on the next blueprint sync. "free" expires after 30 days on Render;
+# use "basic-256mb" (about $6/month) for the real site.
+# databases:
+#   - name: batu-db
+#     plan: basic-256mb
+#     region: frankfurt
+#     databaseName: batu
+#     user: batu

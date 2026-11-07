@@ -32,7 +32,6 @@ def _load_env():
 
 _load_env()
 ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "batu-demo-admin")
-UPLOADS = content.ROOT / "var" / "uploads"
 
 @asynccontextmanager
 async def lifespan(app):
@@ -76,8 +75,10 @@ def ctx(request: Request, **kw):
         return content.tr(text, lang)
 
     def img(slug, size=800):
-        if slug and slug in media:
-            return f"/static/img/{slug}-{size}.jpg"
+        if slug and slug in media:  # photos in the code are static files; studio uploads come from the database
+            if (content.ROOT / "static" / "img" / f"{slug}-{size}.jpg").exists():
+                return f"/static/img/{slug}-{size}.jpg"
+            return f"/media/{slug}-{size}.jpg"
         return None
 
     def credit(slug):
@@ -300,12 +301,11 @@ async def report_submit(request: Request, kind: str = Form("report"), type: str 
                         photo: UploadFile | None = File(None)):
     data = {"type": type, "where": where, "kebele": kebele, "details": details, "phone": phone}
     if photo is not None and photo.filename:
-        UPLOADS.mkdir(parents=True, exist_ok=True)
-        ext = Path(photo.filename).suffix.lower()[:5] if Path(photo.filename).suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"} else ".jpg"
-        name = secrets.token_hex(6) + ext
         blob = await photo.read()
-        if len(blob) <= 6_000_000:
-            (UPLOADS / name).write_bytes(blob)
+        kind_of = {bytes([0xFF, 0xD8]): ("image/jpeg", ".jpg"), bytes([0x89, 0x50]): ("image/png", ".png"), b"RI": ("image/webp", ".webp")}.get(blob[:2])
+        if kind_of and len(blob) <= 6_000_000:  # only real photos, stored in the database (table uploads)
+            name = secrets.token_hex(6) + kind_of[1]
+            db.save_upload(name, blob, kind_of[0])
             data["photo"] = name
     is_complaint = kind == "complaint"
     ref = db.create_request("complaint" if is_complaint else "report", "C" if is_complaint else "R", None,
@@ -466,7 +466,33 @@ def api_request(ref: str):
 
 @app.get("/health")
 def health():
-    return {"ok": True, "documents": len(INDEX.docs), "gemini": INDEX.gemini.enabled}
+    """For the container's health check: the app answers and the database is reachable."""
+    from sqlalchemy import text
+    from . import database
+    try:
+        with database.engine().connect() as c:
+            c.execute(text("select 1"))
+        db_ok = database.kind()
+    except Exception as e:  # noqa: BLE001
+        return JSONResponse({"ok": False, "database": str(e)[:200]}, status_code=503)
+    return {"ok": True, "database": db_ok, "documents": len(INDEX.docs), "gemini": INDEX.gemini.enabled}
+
+
+@app.get("/media/{slug}-{size}.jpg")
+def media_file(slug: str, size: int):
+    """Photos uploaded in the studio (database); falls back to the same photo in static/img."""
+    from sqlalchemy import select
+    from . import database as D
+    from fastapi.responses import FileResponse, Response
+    with D.engine().connect() as c:
+        r = c.execute(select(D.media_files.c.data, D.media_files.c.content_type)
+                      .where(D.media_files.c.slug == slug, D.media_files.c.size == size)).first()
+    if r:
+        return Response(r.data, media_type=r.content_type, headers={"Cache-Control": "public, max-age=86400"})
+    f = content.ROOT / "static" / "img" / f"{slug}-{size}.jpg"
+    if f.exists():
+        return FileResponse(f, headers={"Cache-Control": "public, max-age=86400"})
+    raise HTTPException(404)
 
 
 @app.exception_handler(404)
