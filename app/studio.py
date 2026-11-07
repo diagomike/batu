@@ -954,7 +954,7 @@ def _publish(who: str, upload: bool):
         import sys
         cmd = [sys.executable, "-u", str(content.ROOT / "tools" / "build.py"), "--zip"] + (["--upload"] if upload else [])
         proc = subprocess.Popen(cmd, cwd=str(content.ROOT), stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                text=True, encoding="utf8", errors="replace", env=os.environ | {"BATU_BUILD": "1"})
+                                text=True, encoding="utf8", errors="replace", env=os.environ | {"BATU_BUILD": "1", "PYTHONIOENCODING": "utf-8"})
         result = {}
         for line in proc.stdout:
             line = line.rstrip()
