@@ -3,6 +3,7 @@
 var/
 # generated
 build/
+dist/
 __pycache__/
 *.pyc
 # editor / tool settings
